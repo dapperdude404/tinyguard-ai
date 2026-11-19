@@ -1,49 +1,69 @@
-# 🛡️ TinyGuard AI — M.Tech AI Research Edition
+# 🌿 SmartPlant AI — M.Tech AI Research Edition
 
-**Online anomaly detection dashboard and reproducible TinyML-oriented research prototype** for multivariate IoT sensor streams.
+**A modern, explainable plant-leaf image analysis and disease-classification research prototype.**
 
-## Features
-- Streamlit monitoring dashboard and manual anomaly-injection demo
-- Deterministic four-sensor synthetic data generator and CSV upload
-- Isolation Forest and compact sklearn MLP reconstruction model
-- Chronological train/test split, training-normal threshold, precision, recall, F1, ROC AUC and confusion matrix
-- Multi-seed comparative benchmark exported to CSV
-- Optional **separately trained** Keras INT8 TensorFlow Lite export script
-- Pytest unit tests, GitHub Actions CI, research and classroom guides
+[Original TinyGuard anomaly detection project (preserved)](https://github.com/dapperdude404/tinyguard-ai/tree/archive/tinyguard-anomaly-v1)
 
-## Install and run
-Requires Python 3.11 or a compatible supported Python version.
+## What works now
+- Mobile-friendly Streamlit dashboard with image upload and preprocessing
+- Visible green/yellow/brown pixel indicators (descriptive, **not a diagnosis**)
+- HOG texture and RGB histogram feature extraction
+- Reproducible Random Forest training on a supplied labeled leaf dataset
+- Ranked disease-class predictions **when a trained model is installed**
+- Automated tests, research methodology and classroom presentation script
+
+**Important:** No trained disease classifier or disease dataset is bundled. The app deliberately does not invent a disease prediction without a model. This is a functional research prototype, not a validated agricultural diagnostic product.
+
+## Run online or locally
+Use Python 3.11.
 
 ```bash
 python -m venv .venv
 # Activate your environment
-pip install -r requirements-dev.txt
-python -m pytest -q
+pip install -r requirements.txt
 streamlit run app.py
 ```
 
-To produce research comparison data:
+## Train on real labeled images
+Organize your dataset as:
 
-```bash
-python benchmark.py --seeds 3 --output results/benchmark.csv
+```text
+data/train/
+  Healthy/
+    leaf_001.jpg
+    leaf_002.jpg
+  Tomato_Early_blight/
+    leaf_003.jpg
+  Tomato_Late_blight/
+    leaf_004.jpg
 ```
 
-Optional INT8 export (TensorFlow is deliberately not a required Streamlit Cloud dependency):
+Each class needs **at least five** images; significantly more are required for meaningful research.
 
 ```bash
-pip install 'tensorflow>=2.16'
-python export_tflite.py
+python train.py --data data/train --output models/plant_model.joblib
 ```
 
-## Publish the web app
-Go to https://share.streamlit.io, connect this repository, choose branch `main`, and set the entrypoint to `app.py`. See [deployment checklist](docs/DEPLOYMENT_CHECKLIST.md).
+This writes `models/plant_model.joblib` and `models/plant_model.metrics.json`. The `models/` folder is gitignored: only load trusted model artifacts, and avoid uploading third-party datasets without checking licensing.
 
-## Classroom and research documents
-- [Presentation script](docs/CLASS_DEMO.md)
-- [Research methodology](docs/RESEARCH_GUIDE.md)
-- [Deployment and validation checklist](docs/DEPLOYMENT_CHECKLIST.md)
+For a deployed classifier, make a trusted model artifact available to the deployed environment through a controlled release/build workflow. The public app runs in educational image-inspection mode until then.
 
-## Important limitations
-Synthetic sensor anomalies do not establish real-world detection accuracy. The dashboard uses sklearn models; the optional INT8 export trains a **different Keras model**. TFLite export alone is not microcontroller deployment. Quantized thresholds, operator compatibility, RAM, flash, inference latency, and power must be measured on target hardware. Predictions are not certified industrial safety alerts.
+## Tests
+```bash
+pip install -r requirements-dev.txt
+python -m pytest -q
+```
 
-**Status:** Source code is committed. A public Streamlit deployment, physical device benchmarks, and uploading original DOCX/PPTX binaries remain separate tasks.
+## Deploy
+Open [Streamlit Community Cloud](https://share.streamlit.io), select `dapperdude404/tinyguard-ai`, branch `main`, entrypoint `app.py`. The existing Streamlit deployment may automatically rebuild from the updated main branch; confirm the app status and logs.
+
+## Classroom and research
+- [Research methodology](docs/SMARTPLANT_RESEARCH.md)
+- [8–10 minute classroom presentation script](docs/SMARTPLANT_CLASSROOM.md)
+- [Preserved TinyGuard project](https://github.com/dapperdude404/tinyguard-ai/tree/archive/tinyguard-anomaly-v1)
+
+## Research ethics
+Validation accuracy on a random image split can be misleading if photographs of the same leaf appear in both partitions. Use independent plant/farm-aware test sets and report macro F1 and confusion matrices. Predictions and color indicators are not agricultural treatment advice.
+
+## Version
+SmartPlant AI V1 research baseline. Former TinyGuard code remains in the archival branch and some legacy files on main; they are not part of the new app entrypoint.
