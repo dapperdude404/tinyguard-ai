@@ -1,5 +1,7 @@
-name: Tests
-on: [push, pull_request]
+name: SmartPlant AI Tests
+on:
+  push:
+  pull_request:
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -8,6 +10,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install -r requirements-dev.txt
-      - run: python -m pytest -q
-      - run: python -m compileall -q app.py tinyguard export_tflite.py
+          cache: pip
+      - name: Install dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Check Python syntax
+        run: python -m compileall -q app.py train.py smartplant
+      - name: Run tests
+        run: python -m pytest -q
