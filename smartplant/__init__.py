@@ -1,0 +1,1 @@
+"""SmartPlant AI research prototype."""
