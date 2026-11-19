@@ -1,29 +1,49 @@
-# TinyGuard AI — M.Tech AI Research Edition
+# 🛡️ TinyGuard AI — M.Tech AI Research Edition
 
-TinyML-oriented IoT sensor anomaly detection with a Streamlit dashboard, Isolation Forest, compact autoencoder, evaluation tools, synthetic datasets, and an optional TensorFlow Lite quantization pipeline.
+**Online anomaly detection dashboard and reproducible TinyML-oriented research prototype** for multivariate IoT sensor streams.
 
-## Setup
+## Features
+- Streamlit monitoring dashboard and manual anomaly-injection demo
+- Deterministic four-sensor synthetic data generator and CSV upload
+- Isolation Forest and compact sklearn MLP reconstruction model
+- Chronological train/test split, training-normal threshold, precision, recall, F1, ROC AUC and confusion matrix
+- Multi-seed comparative benchmark exported to CSV
+- Optional **separately trained** Keras INT8 TensorFlow Lite export script
+- Pytest unit tests, GitHub Actions CI, research and classroom guides
+
+## Install and run
+Requires Python 3.11 or a compatible supported Python version.
 
 ```bash
-pip install -r requirements.txt
+python -m venv .venv
+# Activate your environment
+pip install -r requirements-dev.txt
+python -m pytest -q
 streamlit run app.py
 ```
 
-## Tests
+To produce research comparison data:
 
 ```bash
-pip install -r requirements-dev.txt
-python -m pytest -q
+python benchmark.py --seeds 3 --output results/benchmark.csv
 ```
 
-## Deployment
+Optional INT8 export (TensorFlow is deliberately not a required Streamlit Cloud dependency):
 
-Deploy `app.py` from the `main` branch on https://share.streamlit.io after all source files are committed.
+```bash
+pip install 'tensorflow>=2.16'
+python export_tflite.py
+```
 
-## Research integrity
+## Publish the web app
+Go to https://share.streamlit.io, connect this repository, choose branch `main`, and set the entrypoint to `app.py`. See [deployment checklist](docs/DEPLOYMENT_CHECKLIST.md).
 
-Synthetic data is not a validated industrial dataset. The sklearn autoencoder used for the dashboard is distinct from the optional TensorFlow Lite export model. Device latency, power, and RAM must be measured on hardware before claiming embedded TinyML performance.
+## Classroom and research documents
+- [Presentation script](docs/CLASS_DEMO.md)
+- [Research methodology](docs/RESEARCH_GUIDE.md)
+- [Deployment and validation checklist](docs/DEPLOYMENT_CHECKLIST.md)
 
-## Classroom package
+## Important limitations
+Synthetic sensor anomalies do not establish real-world detection accuracy. The dashboard uses sklearn models; the optional INT8 export trains a **different Keras model**. TFLite export alone is not microcontroller deployment. Quantized thresholds, operator compatibility, RAM, flash, inference latency, and power must be measured on target hardware. Predictions are not certified industrial safety alerts.
 
-The original complete ZIP, DOCX research report, and PPTX presentation are available in the ChatGPT conversation. Upload remaining source and binary presentation files before deploying this repository.
+**Status:** Source code is committed. A public Streamlit deployment, physical device benchmarks, and uploading original DOCX/PPTX binaries remain separate tasks.
