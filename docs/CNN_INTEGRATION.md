@@ -22,3 +22,21 @@ After inspecting `outputs/test_metrics.json` and confirming independent evaluati
 ## Before deployment
 
 Verify compatible PyTorch/Torchvision wheels and Streamlit memory limits, run smoke tests with actual leaf images, and audit possible train/test leakage. Keep unverified personal field photographs outside supervised disease training until labeled.
+
+
+## Review gate — 2026-11-20
+
+User-supplied evaluation reports show 0.996318 test accuracy on 1,358 images across 29 classes. This is a *reported in-dataset result*, not an independently verified field accuracy. The dataset audit flags 7,614 possible cross-split original matches; investigate and remove leakage before publication.
+
+Release checklist:
+- [x] Optional CNN inference code added to feature branch
+- [x] Checkpoint loader hardened with safe weights-only deserialization
+- [ ] Verify actual checkpoint metadata and MobileNetV3 architecture against training export
+- [ ] Confirm checkpoint label mapping and image preprocessing match training
+- [ ] Audit overlapping original images across train/validation/test
+- [ ] Test the checkpoint on fresh, independent field photographs
+- [ ] Arrange trusted artifact hosting for checkpoint (avoid large model commits)
+- [ ] Run automated tests and Streamlit smoke tests
+- [ ] Merge PR only after review; then verify production deployment
+
+Review outcome: **CHANGES REQUIRED BEFORE MERGE**. A reported 99.63% dataset score is insufficient to certify field reliability. The live application is unchanged.
