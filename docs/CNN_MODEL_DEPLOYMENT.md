@@ -1,42 +1,27 @@
-# SmartPlant AI trained checkpoint deployment
+# SmartPlant AI — model deployment review
 
-This branch prepares the application to include the user's **trusted, self-trained** MobileNetV3-Small checkpoint. The checkpoint binary is **not yet committed**; the pull request must stay in draft until it is uploaded and tested.
+Status: **Draft PR #2; not merged or deployed.**
 
-## Add the checkpoint using GitHub's web interface
+The user-supplied, trusted checkpoint is stored on Google Drive under file ID `1oF2W3-CelHeIxYWJLOL8m1yFRviIpWVZ`. Drive permissions were checked and include `anyone:reader`. The app's optional downloader uses this ID by default; no Streamlit secret is required.
 
-1. Download `best_model.pt` from Google Drive's `SmartPlant_Results` folder.
-2. In GitHub, switch to branch `feature/smartplant-model-deployment`.
-3. Open **Add file → Upload files** at the repository root.
-4. To preserve the required path, create the folder `models` first (e.g. create `models/.gitkeep`), then open `models` and choose **Add file → Upload files**.
-5. Rename the local file to `smartplant_mobilenetv3.pt` before uploading it.
-6. Commit **to this feature branch**, never directly to `main`.
-7. Verify the file appears at `models/smartplant_mobilenetv3.pt` on the branch.
+The checkpoint was verified locally using `torch.load(weights_only=True)`: MobileNetV3-Small, 29 labels, input size 160, all weights matched and synthetic tensor inference returned 29 normalized probabilities. This **does not** measure disease classification accuracy.
 
-GitHub's web uploader may have file size and browser limitations; the checkpoint is about 6.1 MB. Do not upload access tokens or private Drive links.
+Expected SHA-256:
+`77a85ecacfa812b3d1ee0d9bdb709b226eef8f910fb8713543dd7e4a892b3ac3`
 
-## Validation before merge
+The downloader rejects unexpected file bytes, architecture, label count or input size. If Drive serves an HTML error page, a changed file, or a quota message, the app must fall back to its existing descriptive color analysis.
 
-- Run `python -m pytest -q`.
-- Run `python scripts/check_cnn_checkpoint.py` (requires PyTorch and torchvision).
-- Run `streamlit run app.py`, upload a leaf photograph, and confirm the top-five CNN prediction chart appears.
-- Check label order and preprocessing against the training script.
-- Investigate dataset audit warnings for possible cross-split image matches. Reported 99.63% test accuracy is **not** independently verified field accuracy.
-- Review the GitHub Actions results and approve the PR only after model verification.
+## Before merge
 
-## After merge
+1. Reconcile the divergence between `main` and `feature/smartplant-model-deployment`. Do not overwrite newer changes on `main`.
+2. Run `python -m pytest -q` and inspect GitHub Actions checks.
+3. Test the public Drive download in a fresh environment using `python -c "from smartplant.model_download import ensure_cnn_checkpoint; print(ensure_cnn_checkpoint('models/smartplant_mobilenetv3.pt'))"`.
+4. Run `python scripts/check_cnn_checkpoint.py`.
+5. Run `streamlit run app.py` and test a real leaf photo.
+6. Review possible cross-split duplicate matches in the dataset audit. The previously reported 99.63% test accuracy is **not** independently verified field accuracy.
 
-Streamlit Community Cloud should redeploy from `main` if automatic deployment is configured. Reboot the app if necessary, then smoke-test an uploaded leaf. The model is CPU-loadable and may take longer to start. If deployment fails, revert the PR or remove the model file from the deployment branch.
+## Release
 
-**No new model training or new accuracy measurement is claimed by this deployment process.**
+Only after the checks pass, approve and merge PR #2. Confirm Streamlit redeploys from `main` and displays CNN predictions. Keep a rollback path.
 
-## Alternative: Google Drive model download (prepared, not yet enabled)
-
-The owner supplied Drive file ID `1oF2W3-CelHeIxYWJLOL8m1yFRviIpWVZ`, titled `best_model.pt`. Metadata checked on 2026-11-20 showed **private** access (owner only). Do not enable the downloader until the owner intentionally changes file sharing to **Anyone with the link — Viewer** and confirms access from a signed-out browser.
-
-In Streamlit Community Cloud app settings → Secrets, add:
-
-```toml
-SMARTPLANT_MODEL_DRIVE_ID = "1oF2W3-CelHeIxYWJLOL8m1yFRviIpWVZ"
-```
-
-The app will download the file at startup when a leaf is uploaded, validate basic checkpoint structure, and store it at `models/smartplant_mobilenetv3.pt`. This does not publish the model binary in GitHub. The download may fail due to Drive quotas or permissions. Validate with `scripts/check_cnn_checkpoint.py` and independent leaf photos before merging. A stable artifact host with a pinned checksum is preferable for production.
+**No trained model binary is committed to GitHub.** The Drive link is public to anyone with the link; do not use this method for confidential model artifacts.
