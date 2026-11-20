@@ -4,12 +4,9 @@ Status: **Draft PR #2; not merged or deployed.**
 
 The user-supplied, trusted checkpoint is stored on Google Drive under file ID `1oF2W3-CelHeIxYWJLOL8m1yFRviIpWVZ`. Drive permissions were checked and include `anyone:reader`. The app's optional downloader uses this ID by default; no Streamlit secret is required.
 
-The checkpoint was verified locally using `torch.load(weights_only=True)`: MobileNetV3-Small, 29 labels, input size 160, all weights matched and synthetic tensor inference returned 29 normalized probabilities. This **does not** measure disease classification accuracy.
+Checkpoint structure and inference must be verified in a clean runtime before release. Prior reported validation results are not independently reproduced in this review.
 
-Expected SHA-256:
-`77a85ecacfa812b3d1ee0d9bdb709b226eef8f910fb8713543dd7e4a892b3ac3`
-
-The downloader rejects unexpected file bytes, architecture, label count or input size. If Drive serves an HTML error page, a changed file, or a quota message, the app must fall back to its existing descriptive color analysis.
+The downloader validates checkpoint structure and class count, but does not yet verify file provenance with a confirmed checksum. Obtain a SHA-256 from the actual downloaded binary before production release. If Drive serves an HTML error page, a changed file, or a quota message, the app must fall back to its existing descriptive color analysis.
 
 ## Before merge
 
@@ -24,4 +21,4 @@ The downloader rejects unexpected file bytes, architecture, label count or input
 
 Only after the checks pass, approve and merge PR #2. Confirm Streamlit redeploys from `main` and displays CNN predictions. Keep a rollback path.
 
-**No trained model binary is committed to GitHub.** The Drive link is public to anyone with the link; do not use this method for confidential model artifacts.
+**The current main branch contains a tiny invalid placeholder at models/smartplant_mobilenetv3.pt, not the trained binary.** The downloader attempts to replace invalid placeholders after validation. The Drive link is public to anyone with the link; do not use this method for confidential model artifacts.
