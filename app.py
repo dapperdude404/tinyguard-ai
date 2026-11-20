@@ -52,11 +52,12 @@ with tab1:
             st.caption("These are simple pixel-color heuristics. They are not plant segmentation, disease severity, or a clinical diagnosis.")
             cnn = None
             cnn_path = "models/smartplant_mobilenetv3.pt"
+            checkpoint_ready = False
             try:
-                ensure_cnn_checkpoint(cnn_path)
+                checkpoint_ready = ensure_cnn_checkpoint(cnn_path) is not None
             except Exception as exc:
-                st.warning(f"Model download unavailable: {exc}")
-            if Path(cnn_path).is_file():
+                st.warning(f"CNN checkpoint verification failed: {exc}")
+            if checkpoint_ready:
                 try:
                     cnn = load_cnn(cnn_path)
                 except Exception as exc:
