@@ -3,10 +3,18 @@ import os
 from pathlib import Path
 import tempfile
 
-MODEL_ID = "1oF2W3-CelHeIxYWJLOL8m1yFRviIpWVZ"
+MODEL_ID = "1iDoD3nxQNv9qgTm6HYH4_sUAxEwbpp59"
+MODEL_SHA256 = "f41551f9eb0a084856f07ad154c1b53739253f0d614a37056bfa77e7e37fc313"
 
 
 def _validate(path):
+    import hashlib
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    if digest.hexdigest() != MODEL_SHA256:
+        raise ValueError("Checkpoint SHA-256 mismatch; refusing to load.")
     import torch
     checkpoint = torch.load(path, map_location="cpu", weights_only=True)
     if not isinstance(checkpoint, dict):
