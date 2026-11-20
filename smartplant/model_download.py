@@ -1,0 +1,48 @@
+"""Download and validate a trusted SmartPlant checkpoint before inference."""
+import os
+from pathlib import Path
+import tempfile
+
+MODEL_ID = "1oF2W3-CelHeIxYWJLOL8m1yFRviIpWVZ"
+
+
+def _validate(path):
+    import torch
+    checkpoint = torch.load(path, map_location="cpu", weights_only=True)
+    if not isinstance(checkpoint, dict):
+        raise ValueError("Checkpoint must be a dictionary.")
+    if checkpoint.get("architecture") not in (None, "mobilenet_v3_small"):
+        raise ValueError("Unexpected checkpoint architecture.")
+    if not isinstance(checkpoint.get("state_dict"), dict) or not isinstance(checkpoint.get("labels"), dict):
+        raise ValueError("Missing weights or labels.")
+    if len(checkpoint["labels"]) != 29:
+        raise ValueError("Expected 29 classes.")
+    return checkpoint
+
+
+def ensure_cnn_checkpoint(path):
+    target = Path(path)
+    if target.is_file():
+        try:
+            _validate(target)
+            return target
+        except (ValueError, RuntimeError, EOFError, OSError):
+            # A previous empty or corrupt placeholder must not suppress download.
+            pass
+
+    file_id = os.getenv("SMARTPLANT_MODEL_DRIVE_ID", MODEL_ID).strip()
+    if not file_id:
+        return None
+    import gdown
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(dir=target.parent, suffix=".pt", delete=False) as handle:
+        temporary = Path(handle.name)
+    try:
+        downloaded = gdown.download(id=file_id, output=str(temporary), quiet=True)
+        if not downloaded or temporary.stat().st_size < 1024:
+            raise RuntimeError("Model download failed; check Drive sharing and quotas.")
+        _validate(temporary)
+        temporary.replace(target)
+        return target
+    finally:
+        temporary.unlink(missing_ok=True)
