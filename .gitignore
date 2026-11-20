@@ -3,6 +3,8 @@ __pycache__/
 .pytest_cache/
 *.pyc
 data/
-models/
+models/*
+!models/smartplant_mobilenetv3.pt
+!models/.gitkeep
 results/
 *.joblib
