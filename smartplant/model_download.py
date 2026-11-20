@@ -7,7 +7,7 @@ def ensure_cnn_checkpoint(path):
     target = Path(path)
     if target.is_file():
         return target
-    file_id = os.getenv("SMARTPLANT_MODEL_DRIVE_ID", "").strip()
+    file_id = os.getenv("SMARTPLANT_MODEL_DRIVE_ID", "1oF2W3-CelHeIxYWJLOL8m1yFRviIpWVZ").strip()
     if not file_id:
         return None
     import gdown
