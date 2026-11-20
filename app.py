@@ -6,6 +6,7 @@ import plotly.express as px
 import streamlit as st
 from PIL import Image
 from smartplant.core import decode_image, leaf_observations, load_model, predict
+from smartplant.cnn import load_cnn, predict_cnn
 
 st.set_page_config(page_title="SmartPlant AI | Plant Health Research", page_icon="🌿", layout="wide")
 st.markdown("""<style>
@@ -23,7 +24,7 @@ with st.sidebar:
     st.success("Image analysis available")
     st.markdown("**How it works**\n\n1. Upload a leaf photo.\n2. Inspect visual color indicators.\n3. If a trained classifier is installed, view predicted categories.")
     st.info("The application never fabricates a disease diagnosis when no trained model is available.")
-    st.markdown("**Model:** Random Forest on HOG shape/texture and RGB histogram features.")
+    st.markdown("**Models:** CNN when trained checkpoint installed; Random Forest fallback.")
     st.markdown("**Train locally:** `python train.py --data data/train`")
     st.caption("Research demonstration, not agricultural or medical advice.")
 
@@ -48,11 +49,26 @@ with tab1:
             b.metric("Yellow", f"{observations['yellow_pixels_pct']}%")
             c.metric("Brown", f"{observations['brown_pixels_pct']}%")
             st.caption("These are simple pixel-color heuristics. They are not plant segmentation, disease severity, or a clinical diagnosis.")
-            model = load_model("models/plant_model.joblib")
-            if model is None:
+            cnn = None
+            cnn_path = "models/smartplant_mobilenetv3.pt"
+            if Path(cnn_path).is_file():
+                try:
+                    cnn = load_cnn(cnn_path)
+                except Exception as exc:
+                    st.error(f"CNN checkpoint could not be loaded: {exc}")
+            if cnn is not None:
+                results = predict_cnn(image, cnn)
+                st.success(f"CNN predicted category: **{results[0][0].replace('_', ' ')}**")
+                st.metric("CNN model class probability", f"{results[0][1]:.1%}")
+                st.caption("Class probability is not a verified diagnosis confidence.")
+                chart = pd.DataFrame(results, columns=["Category", "Probability"])
+                st.plotly_chart(px.bar(chart, x="Probability", y="Category", orientation="h", range_x=[0,1]), use_container_width=True)
+                st.download_button("Download CNN predictions", chart.to_csv(index=False), "smartplant_cnn_predictions.csv", "text/csv")
+            model = load_model("models/plant_model.joblib") if cnn is None else None
+            if model is None and cnn is None:
                 st.warning("Disease classifier not installed yet. Train on labeled leaf images and add the resulting trusted model artifact to models/plant_model.joblib.")
                 st.markdown("**What you can demonstrate now:** leaf upload, image preprocessing, explainable color analysis and the end-to-end research workflow.")
-            else:
+            elif model is not None:
                 results = predict(model, image)
                 name, confidence = results[0]
                 st.success(f"Top predicted category: **{name.replace('_',' ')}**")
@@ -94,7 +110,7 @@ with tab3:
 
 **Evaluation plan:** Use a labeled dataset, separate train/validation/test sets, group near-duplicate images by source plant, measure macro F1 and per-class recall, and test with new field photographs.
 
-**Current limitation:** No pretrained disease classifier or validated dataset is bundled with this repository. Do not claim actual disease-detection accuracy until training and independent testing have been completed.
+**Current limitation:** CNN inference is integrated but no trained CNN checkpoint is bundled. Do not claim CNN accuracy until a checkpoint is trained and independently evaluated.
 
 **Deployment:** Connect this GitHub repository to Streamlit Community Cloud, use branch `main`, and set `app.py` as the entrypoint.
 
