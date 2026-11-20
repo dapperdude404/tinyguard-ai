@@ -8,12 +8,17 @@ def load_cnn(checkpoint_path):
         return None
     import torch
     from torchvision import models
-    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
+    if not isinstance(checkpoint, dict) or "labels" not in checkpoint or "state_dict" not in checkpoint:
+        raise ValueError("Unsupported checkpoint: expected labels and state_dict.")
     labels = checkpoint["labels"]
     names = [label for label, _ in sorted(labels.items(), key=lambda item: item[1])]
     model = models.mobilenet_v3_small(weights=None)
     model.classifier[-1] = torch.nn.Linear(model.classifier[-1].in_features, len(names))
-    model.load_state_dict(checkpoint["state_dict"])
+    try:
+        model.load_state_dict(checkpoint["state_dict"])
+    except RuntimeError as exc:
+        raise ValueError("Checkpoint architecture does not match MobileNetV3-Small.") from exc
     model.eval()
     return model, names
 
