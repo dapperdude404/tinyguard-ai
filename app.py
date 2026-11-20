@@ -7,6 +7,7 @@ import streamlit as st
 from PIL import Image
 from smartplant.core import decode_image, leaf_observations, load_model, predict
 from smartplant.cnn import load_cnn, predict_cnn
+from smartplant.model_download import ensure_cnn_checkpoint
 
 st.set_page_config(page_title="SmartPlant AI | Plant Health Research", page_icon="🌿", layout="wide")
 st.markdown("""<style>
@@ -51,6 +52,10 @@ with tab1:
             st.caption("These are simple pixel-color heuristics. They are not plant segmentation, disease severity, or a clinical diagnosis.")
             cnn = None
             cnn_path = "models/smartplant_mobilenetv3.pt"
+            try:
+                ensure_cnn_checkpoint(cnn_path)
+            except Exception as exc:
+                st.warning(f"Model download unavailable: {exc}")
             if Path(cnn_path).is_file():
                 try:
                     cnn = load_cnn(cnn_path)
