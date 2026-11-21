@@ -21,7 +21,7 @@ def test_only_user_consented_metadata_is_sent():
     assert "CloudSync.send" in activity
     assert "lastScanPayload" in activity
     sync = (JAVA / "CloudSync.kt").read_text()
-    assert "image" not in sync.lower() or "no image" in sync.lower()
+    assert '"image"' not in sync\n    assert "JSONObject" in sync
     assert "Authorization" in sync
 
 
