@@ -1,0 +1,35 @@
+name: SmartPlant 50 Source Intake Checks
+on:
+  pull_request:
+    paths:
+      - 'dataset_sources/**'
+      - 'scripts/check_smartplant_sources.py'
+      - 'tests/test_smartplant_sources.py'
+      - '.github/workflows/smartplant-50-source-readiness.yml'
+      - 'notebooks/SmartPlant_50_Dataset_and_Training.ipynb'
+  push:
+    branches:
+      - research/smartplant-50-dataset-intake
+
+jobs:
+  source-register:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate registry structure and show evidence gaps
+        run: python scripts/check_smartplant_sources.py
+      - name: Test source status and class order
+        run: python -m unittest discover -s tests -p 'test_smartplant_sources.py' -v
+      - name: Validate Colab notebook JSON structure
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          notebook=json.loads(Path("notebooks/SmartPlant_50_Dataset_and_Training.ipynb").read_text())
+          assert notebook["nbformat"] == 4
+          assert len(notebook["cells"]) >= 5
+          print("Colab notebook schema parse: PASS")
+          PY
