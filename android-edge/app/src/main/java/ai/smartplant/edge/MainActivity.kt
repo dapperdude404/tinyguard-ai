@@ -41,8 +41,9 @@ class MainActivity : ComponentActivity() {
             setOnClickListener {
                 val folder = File(cacheDir, "images").apply { mkdirs() }
                 val file = File.createTempFile("leaf_", ".jpg", folder)
-                photoUri = FileProvider.getUriForFile(this@MainActivity, "${packageName}.fileprovider", file)
-                camera.launch(photoUri)
+                val uri = FileProvider.getUriForFile(this@MainActivity, "${packageName}.fileprovider", file)
+                photoUri = uri
+                camera.launch(uri)
             }
         })
         root.addView(Button(this).apply {
