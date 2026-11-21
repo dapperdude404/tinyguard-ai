@@ -9,6 +9,11 @@ The data/expanded folder must contain independently licensed, labeled images.
 import argparse
 import json
 from pathlib import Path
+import sys
+
+# Support "python scripts/prepare_expanded_labels.py" from repository root.
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from smartplant.expanded_labels import build_plan, pinned_legacy_checkpoint_names
 
