@@ -111,6 +111,12 @@ class MainActivity : ComponentActivity() {
         val welcome = card().apply {
             background = GradientDrawable(GradientDrawable.Orientation.TL_BR,
                 intArrayOf(forest, Color.rgb(25, 116, 76))).apply { cornerRadius = dp(22).toFloat() }
+            addView(ImageView(this@MainActivity).apply {
+                setImageResource(R.drawable.ic_smartplant_foreground)
+                contentDescription = "SmartPlant AI leaf and neural circuit logo"
+                scaleType = ImageView.ScaleType.FIT_CENTER
+            }, LinearLayout.LayoutParams(dp(66), dp(66)))
+            space(this, 6)
             addView(label("Scan a leaf, understand its patterns.", 20f, Color.WHITE, true))
             space(this, 8)
             addView(label("Capture a leaf photo or choose one from your phone. Our 29-class CNN runs entirely on your device.", 14f,
