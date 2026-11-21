@@ -12,3 +12,4 @@ results/
 android-edge/app/src/main/assets/*.onnx
 android-edge/app/src/main/assets/labels.json
 android-edge/app/src/main/assets/model_manifest.json
+\n# Optional IoT cloud runtime database and secrets\niot_cloud/data/\n.env\n.env.*\n!.env.example\n
