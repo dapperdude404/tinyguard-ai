@@ -13,7 +13,9 @@ import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.Spinner
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -54,6 +56,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var placeholder: TextView
     private lateinit var resultPanel: LinearLayout
     private lateinit var historyPanel: LinearLayout
+    private lateinit var cropSpinner: Spinner
     private lateinit var cameraButton: Button
     private lateinit var galleryButton: Button
     private var photoUri: Uri? = null
@@ -111,6 +114,12 @@ class MainActivity : ComponentActivity() {
         val welcome = card().apply {
             background = GradientDrawable(GradientDrawable.Orientation.TL_BR,
                 intArrayOf(forest, Color.rgb(25, 116, 76))).apply { cornerRadius = dp(22).toFloat() }
+            addView(ImageView(this@MainActivity).apply {
+                setImageResource(R.drawable.ic_smartplant_foreground)
+                contentDescription = "SmartPlant AI leaf and neural circuit logo"
+                scaleType = ImageView.ScaleType.FIT_CENTER
+            }, LinearLayout.LayoutParams(dp(66), dp(66)))
+            space(this, 6)
             addView(label("Scan a leaf, understand its patterns.", 20f, Color.WHITE, true))
             space(this, 8)
             addView(label("Capture a leaf photo or choose one from your phone. Our 29-class CNN runs entirely on your device.", 14f,
@@ -121,6 +130,25 @@ class MainActivity : ComponentActivity() {
         content.addView(welcome)
         space(content, 18)
 
+        val cropChoices = try {
+            val labels = JSONArray(assets.open("labels.json").bufferedReader().use { it.readText() })
+            listOf("Auto / unknown") + (0 until labels.length())
+                .map { CropReview.cropOf(labels.getString(it)) }.distinct().sorted()
+        } catch (_: Exception) {
+            listOf("Auto / unknown", "Potato", "Tomato", "Strawberry")
+        }
+        content.addView(label("OPTIONAL: WHICH CROP IS IN THE PHOTO?", 11f, emerald, true))
+        space(content, 7)
+        cropSpinner = Spinner(this).apply {
+            adapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, cropChoices)
+            background = rounded(Color.WHITE, 12, border)
+            contentDescription = "Select the crop type if known; otherwise automatic review"
+            setPadding(dp(12), dp(8), dp(12), dp(8))
+        }
+        content.addView(cropSpinner, LinearLayout.LayoutParams(-1, dp(52)))
+        space(content, 7)
+        content.addView(label("This is your crop label, not an AI species prediction. It helps flag crop mismatches.", 12f, muted))
+        space(content, 16)
         content.addView(section("01", "Capture your leaf"))
         space(content, 10)
         val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
@@ -208,17 +236,19 @@ class MainActivity : ComponentActivity() {
     private fun analyze(uri: Uri) {
         setBusy(true)
         status.text = "Analyzing locally · Please keep the app open"
+        val chosenCrop = cropSpinner.selectedItem?.toString()
         executor.execute {
             var capture: File? = null
             try {
                 val bitmap = decodePhoto(uri)
-                val predictions = EdgeClassifier(applicationContext).use { it.predict(bitmap) }
+                val predictions = EdgeClassifier(applicationContext).use { it.predict(bitmap, topK = 29) }
+                val assessment = CropReview.assess(predictions, chosenCrop)
                 capture = cameraFile
                 runOnUiThread {
                     preview.setImageBitmap(bitmap)
                     preview.visibility = View.VISIBLE
                     placeholder.visibility = View.GONE
-                    showPredictions(predictions)
+                    showPredictions(predictions.take(5), assessment)
                     saveHistory(predictions.first())
                     renderHistory()
                     status.text = "Analysis complete · No image uploaded to the cloud"
@@ -277,7 +307,7 @@ class MainActivity : ComponentActivity() {
         resultPanel.addView(label("Choose a leaf photo to see predicted categories and probability bars.", 13f, muted))
     }
 
-    private fun showPredictions(predictions: List<Prediction>) {
+    private fun showPredictions(predictions: List<Prediction>, assessment: CropAssessment?) {
         resultPanel.removeAllViews()
         val top = predictions.first()
         resultPanel.addView(label("TOP PREDICTED CATEGORY", 11f, emerald, true))
@@ -286,6 +316,27 @@ class MainActivity : ComponentActivity() {
         space(resultPanel, 7)
         resultPanel.addView(label(String.format(Locale.US, "%.1f%% model probability", top.probability * 100f), 15f, emerald, true))
         space(resultPanel, 15)
+        if (assessment != null) {
+            val message = if (assessment.mismatch) {
+                "Crop mismatch: you selected ${assessment.selectedCrop}, but the model's top crop is ${assessment.modelTopCrop}. Check the photo and consider retaking it."
+            } else {
+                "Crop check: model top crop agrees with your selected ${assessment.selectedCrop}. This is not a verified species identification."
+            }
+            resultPanel.addView(label(message, 13f, if (assessment.mismatch) Color.rgb(157, 82, 24) else emerald, true))
+            space(resultPanel, 8)
+            if (assessment.withinCrop.isNotEmpty()) {
+                resultPanel.addView(label("WITHIN YOUR SELECTED CROP (ORIGINAL SCORES)", 11f, muted, true))
+                for (candidate in assessment.withinCrop) {
+                    resultPanel.addView(label(
+                        candidate.name.replace("|", " · ") + " — " +
+                            String.format(Locale.US, "%.1f%%", candidate.probability * 100f),
+                        12f, ink))
+                }
+            } else {
+                resultPanel.addView(label("No classes found for this crop in the loaded model.", 12f, muted))
+            }
+            space(resultPanel, 15)
+        }
         resultPanel.addView(label("TOP 5 CATEGORIES", 11f, muted, true))
         space(resultPanel, 6)
         for (p in predictions) {
