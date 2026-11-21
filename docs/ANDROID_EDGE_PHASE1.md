@@ -31,6 +31,15 @@ The Android project deliberately declares **no INTERNET permission**. This is a 
 - The trained model's real-world accuracy remains unverified; class probabilities are not diagnostic confidence.
 - Do not merge until the Android build, model parity, device camera flow, offline test and real-leaf comparison have been demonstrated.
 
+
+## CI verification (updated after run #44894401549)
+- The first run's `static` job passed all **5** tests.
+- The first `android-compile` job failed **before compilation**, because `android-actions/setup-android@v3` invoked a removed SDK package named `tools`.
+- The development workflow now installs supported Android platform/build-tools packages using the runner SDK, and adds a new `onnx-parity` job. This downloads the pinned checkpoint, compares ONNX and PyTorch logits on three synthetic inputs, and hands generated assets to the Android debug build.
+- If compilation succeeds, CI uploads `smartplant-edge-debug-UNTESTED` for short-lived inspection. The artifact **must not be treated as production-ready** without device and airplane-mode tests.
+- The exported `.onnx`, labels and manifest are ignored by Git. The working Streamlit project on `main` remains untouched.
+- **CI outcomes after these changes have not yet been independently confirmed**; do not infer a passing Android build from the earlier static-test success.
+
 ## Suggested acceptance tests
 | Test | Expected |
 | --- | --- |
