@@ -84,7 +84,7 @@ class MainActivity : ComponentActivity() {
             clipToPadding = false
         }
         val content = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
-        scroll.addView(content, ScrollView.LayoutParams(-1, -2))
+        scroll.addView(content, ViewGroup.LayoutParams(-1, -2))
         ViewCompat.setOnApplyWindowInsetsListener(scroll) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             view.setPadding(dp(18), bars.top + dp(16), dp(18), bars.bottom + dp(24))
