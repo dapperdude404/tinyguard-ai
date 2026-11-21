@@ -64,6 +64,14 @@ Model download configuration: [`smartplant/model_download.py`](smartplant/model_
 
 **Important:** The checkpoint is shared publicly via a link. Do not replace it with an unverified artifact, and do not disable PyTorch safe loading.
 
+## 🌐 Optional IoT cloud monitoring — experimental
+
+The Android Edge AI app remains able to classify leaf images **without internet**. The experimental Phase 3 extension introduces **explicit, one-time HTTPS syncing of scan metadata** and a separate monitoring dashboard. It does not upload photos, GPS coordinates or device identities.
+
+The new FastAPI service accepts authenticated results, stores crop labels and class probabilities in SQLite, and exposes read-protected summaries and human-review flags. A separate Streamlit dashboard displays recent scans and cross-crop mismatch alerts.
+
+**Status:** Implemented in an isolated development PR; not merged, cloud-deployed or verified on a physical phone end to end. See [IoT Cloud Monitoring setup and security notes](docs/IOT_CLOUD_MONITORING.md). This is an IoT communication prototype, not a validated agricultural diagnostic service.
+
 ## ⚙️ Run locally
 
 Recommended: **Python 3.11**.
