@@ -136,3 +136,18 @@ def test_opt_in_expanded_checkpoint_requires_sha(monkeypatch, tmp_path):
     monkeypatch.setenv("SMARTPLANT_EXPANDED_MODEL_SHA256",
                        hashlib.sha256(path.read_bytes()).hexdigest())
     assert selected_cnn_checkpoint() == (str(path), "expanded")
+
+def test_unreviewed_image_formats_are_rejected(tmp_path):
+    root, plan, _ = _make_dataset(tmp_path)
+    # ImageFolder also supports BMP, so the audit must never silently skip it.
+    image = Image.new("RGB", (12, 12), color=(12, 53, 102))
+    image.save(root / "train/c000/extra.bmp")
+    with pytest.raises(ValueError, match="Unreviewed file types"):
+        audit_dataset(root, plan, (1, 1, 1))
+
+
+def test_nested_data_are_rejected(tmp_path):
+    root, plan, _ = _make_dataset(tmp_path)
+    (root / "test/c005/hidden").mkdir()
+    with pytest.raises(ValueError, match="Unexpected nested folders"):
+        audit_dataset(root, plan, (1, 1, 1))
