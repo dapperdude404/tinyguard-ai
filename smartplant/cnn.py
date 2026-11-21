@@ -12,6 +12,17 @@ def load_cnn(checkpoint_path):
     if not isinstance(checkpoint, dict) or "labels" not in checkpoint or "state_dict" not in checkpoint:
         raise ValueError("Unsupported checkpoint: expected labels and state_dict.")
     labels = checkpoint["labels"]
+    if not isinstance(labels, dict) or not 2 <= len(labels) <= 128:
+        raise ValueError("Checkpoint must have 2..128 class labels.")
+    if not all(isinstance(name, str) and name.strip() and isinstance(index, int)
+               for name, index in labels.items()):
+        raise ValueError("Invalid label metadata.")
+    if set(labels.values()) != set(range(len(labels))):
+        raise ValueError("Labels must use unique consecutive indices.")
+    if checkpoint.get("architecture") not in (None, "mobilenet_v3_small"):
+        raise ValueError("Unexpected CNN architecture.")
+    if checkpoint.get("input_size") not in (None, 160):
+        raise ValueError("Unexpected model input size.")
     names = [label for label, _ in sorted(labels.items(), key=lambda item: item[1])]
     model = models.mobilenet_v3_small(weights=None)
     model.classifier[-1] = torch.nn.Linear(model.classifier[-1].in_features, len(names))
