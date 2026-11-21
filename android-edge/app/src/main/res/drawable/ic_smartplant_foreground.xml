@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Crisp leaf/circuit design, kept within the adaptive icon safe zone -->
+    <path android:fillColor="#DDF8E9"
+        android:pathData="M54,25 C72,29 79,42 72,57 C66,71 52,75 41,66 C31,57 33,42 54,25 Z"/>
+    <path android:fillColor="#9DE5BC"
+        android:pathData="M53,29 C48,42 47,54 51,67 C62,64 70,53 70,43 C66,37 61,32 53,29 Z"/>
+    <path android:strokeColor="#145B3D" android:strokeWidth="3.1"
+        android:strokeLineCap="round" android:fillColor="@android:color/transparent"
+        android:pathData="M40,74 C49,58 55,46 66,38"/>
+    <path android:strokeColor="#145B3D" android:strokeWidth="2.4"
+        android:strokeLineCap="round" android:fillColor="@android:color/transparent"
+        android:pathData="M49,59 L39,49 M55,51 L67,52"/>
+    <!-- Microchip/circuit dots suggest on-device inference -->
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M31,71 a4,4 0,1 0,8 0 a4,4 0,1 0,-8 0"/>
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M72,63 a4,4 0,1 0,8 0 a4,4 0,1 0,-8 0"/>
+    <path android:strokeColor="#DDF8E9" android:strokeWidth="2"
+        android:strokeLineCap="round" android:fillColor="@android:color/transparent"
+        android:pathData="M38,71 L46,71 M70,63 L62,63"/>
+</vector>
