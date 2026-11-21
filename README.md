@@ -121,14 +121,6 @@ For meaningful disease-classification evaluation, use an **independent, plant- o
 
 The live screenshot demonstrates that CNN inference and visualization work. It does **not** establish agronomic accuracy, robustness to unseen farms or calibrated probabilities.
 
-## 🧬 Experimental 50-class CNN expansion (not yet trained)
-
-A separate development workflow proposes retaining the **original 29** classes and adding **21 crop/health categories** for **Mango, Guava, Banana, Rice, Wheat, Citrus, Maize and Papaya**. It includes a SHA-pinned MobileNetV3-Small warm-start training script, strict dataset audits, macro-F1 test reporting, and dynamic ONNX / Android / Streamlit label support.
-
-**This is a development pipeline, not an available 50-class disease classifier.** A real licensed dataset, training, independent evaluation, new model checksum, and on-device validation are required. The default production model remains the verified 29-class CNN.
-
-See [50-class training, evaluation and deployment gates](docs/SMARTPLANT_50_CLASS_EXPANSION.md).
-
 ## 🚀 Deploy
 
 Deploy with [Streamlit Community Cloud](https://share.streamlit.io):

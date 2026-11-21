@@ -25,21 +25,9 @@ class EdgeClassifier(private val context: Context) : AutoCloseable {
         val digest = MessageDigest.getInstance("SHA-256").digest(model)
             .joinToString("") { "%02x".format(it) }
         require(digest == manifest.getString("sha256")) { "Model checksum mismatch" }
-        val labelBytes = context.assets.open("labels.json").use { it.readBytes() }
-        val labelsDigest = MessageDigest.getInstance("SHA-256").digest(labelBytes)
-            .joinToString("") { "%02x".format(it) }
-        require(labelsDigest == manifest.getString("labels_sha256")) { "Label checksum mismatch" }
-        val json = JSONArray(String(labelBytes, Charsets.UTF_8))
+        val json = JSONArray(context.assets.open("labels.json").bufferedReader().use { it.readText() })
         labels = (0 until json.length()).map { json.getString(it) }
-        require(labels.size in 2..128) { "Unsupported class count" }
-        require(labels.size == manifest.getInt("class_count")) { "Model/labels class count mismatch" }
-        require(labels.distinct().size == labels.size && labels.all { it.isNotBlank() }) {
-            "Duplicate or empty class label"
-        }
-        val input = manifest.getJSONArray("input_shape")
-        require((0 until input.length()).map { input.getInt(it) } == listOf(1, 3, 160, 160)) {
-            "Unexpected preprocessing input shape"
-        }
+        require(labels.size == 29) { "Expected 29 classes" }
         session = env.createSession(model)
         require(session.inputInfo.size == 1 && session.outputInfo.size == 1)
     }
