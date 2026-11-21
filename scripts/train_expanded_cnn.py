@@ -11,6 +11,11 @@ import hashlib
 import json
 import random
 from pathlib import Path
+import sys
+
+# Make direct script invocation work without requiring a pip install -e .
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import numpy as np
 import torch
