@@ -8,3 +8,7 @@ models/*
 !models/.gitkeep
 results/
 *.joblib
+# Generated offline Android assets: create locally or in CI, never commit weights.
+android-edge/app/src/main/assets/*.onnx
+android-edge/app/src/main/assets/labels.json
+android-edge/app/src/main/assets/model_manifest.json
