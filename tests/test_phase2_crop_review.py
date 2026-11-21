@@ -24,6 +24,8 @@ def test_launcher_icon_registered():
     assert (RES / "mipmap-anydpi-v26/ic_smartplant.xml").exists()
     assert (RES / "drawable/ic_smartplant_foreground.xml").exists()
 
-def test_offline_manifest_remains_without_internet():
+def test_offline_classifier_independent_of_opt_in_network():
     manifest = (ROOT / "android-edge/app/src/main/AndroidManifest.xml").read_text(encoding="utf-8")
-    assert "android.permission.INTERNET" not in manifest
+    assert "android.permission.INTERNET" in manifest
+    classifier = (SRC / "EdgeClassifier.kt").read_text()
+    assert "CloudSync" not in classifier
