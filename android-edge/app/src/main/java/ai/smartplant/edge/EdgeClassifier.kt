@@ -32,7 +32,7 @@ class EdgeClassifier(private val context: Context) : AutoCloseable {
         require(session.inputInfo.size == 1 && session.outputInfo.size == 1)
     }
 
-    fun predict(bitmap: Bitmap): List<Prediction> {
+    fun predict(bitmap: Bitmap, topK: Int = 5): List<Prediction> {
         val resized = preprocess(bitmap)
         OnnxTensor.createTensor(env, FloatBuffer.wrap(resized), longArrayOf(1, 3, 160, 160)).use { tensor ->
             session.run(mapOf(session.inputNames.first() to tensor)).use { result ->
@@ -42,7 +42,7 @@ class EdgeClassifier(private val context: Context) : AutoCloseable {
                 val exponentials = logits.map { exp((it - max).toDouble()) }
                 val sum = exponentials.sum()
                 return labels.indices.map { Prediction(labels[it], (exponentials[it] / sum).toFloat()) }
-                    .sortedByDescending { it.probability }.take(5)
+                    .sortedByDescending { it.probability }.take(topK.coerceIn(1, labels.size))
             }
         }
     }
