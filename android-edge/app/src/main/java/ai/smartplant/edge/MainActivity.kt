@@ -122,7 +122,7 @@ class MainActivity : ComponentActivity() {
             space(this, 6)
             addView(label("Scan a leaf, understand its patterns.", 20f, Color.WHITE, true))
             space(this, 8)
-            addView(label("Capture a leaf photo or choose one from your phone. Our 29-class CNN runs entirely on your device.", 14f,
+            addView(label("Capture a leaf photo or choose one from your phone. Our CNN runs entirely on your device. Available classes depend on the installed model.", 14f,
                 Color.rgb(224, 245, 232)))
             space(this, 12)
             addView(label("PRIVATE BY DESIGN  ·  NO CLOUD UPLOAD", 10f, Color.rgb(200, 237, 213), true))
