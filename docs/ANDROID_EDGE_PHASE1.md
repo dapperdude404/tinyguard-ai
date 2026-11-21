@@ -54,3 +54,15 @@ The Android project deliberately declares **no INTERNET permission**. This is a 
 
 ## GitHub workflow
 All work stays on `feature/smartplant-android-edge-phase1` and in a draft pull request. No changes to `main` or Streamlit production.
+
+## Verified CI results — 21 November 2026
+
+Workflow: [Android Edge Phase 1 Checks, run 44897501674](https://github.com/dapperdude404/tinyguard-ai/actions/runs/44897501674), based on commit `f6faf03002567f01e59daba0809f96cc0b45bb4b`.
+
+- **Static:** passed (five tests).
+- **ONNX parity:** passed after checksum-verified download of the trusted 29-class checkpoint; maximum absolute raw-logit differences on three seeded synthetic tensors were approximately 1.24e-5, 1.24e-5 and 1.62e-5 in the preceding run.
+- **Android Gradle:** `assembleDebug` succeeded after correcting the non-null camera `Uri` and SDK path handling.
+- **Debug APK:** [smartplant-edge-debug-UNTESTED](https://github.com/dapperdude404/tinyguard-ai/actions/runs/44897501674/artifacts/14704438646), uploaded and retained until approximately 28 November 2026 (according to GitHub artifact metadata).
+- **Full SmartPlant AI tests:** passed in workflow run 44897501668.
+
+**Release status:** Build readiness established; this is not a tested or published Android release. On-device installation, phone camera/gallery operations, offline/airplane-mode inference, image-preprocessing parity against Streamlit, memory/performance and crash recovery are still required before releasing or merging.
