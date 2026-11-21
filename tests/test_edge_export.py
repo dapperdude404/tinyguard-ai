@@ -20,7 +20,7 @@ def test_manifest_uses_private_file_provider():
 def test_android_preprocess_and_class_count():
     code = (ROOT / "android-edge/app/src/main/java/ai/smartplant/edge/EdgeClassifier.kt").read_text()
     assert "160 * 160" in code
-    assert "labels.size == 29" in code
+    assert 'labels.size == manifest.getInt("class_count")' in code\n    assert 'manifest.getString("labels_sha256")' in code
     assert "SHA-256" in code
     assert "ImageNet" in code
 
