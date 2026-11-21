@@ -84,7 +84,14 @@ def audit_dataset(root: str | Path, plan_path: str | Path,
             folder = base / class_id
             if not folder.is_dir():
                 raise ValueError(f"Missing {split}/{class_id}: all 50 classes need images")
-            files = sorted(p for p in folder.iterdir()
+            entries = list(folder.iterdir())
+            nested = [p.name for p in entries if p.is_dir()]
+            if nested:
+                raise ValueError(f"Unexpected nested folders in {split}/{class_id}: {nested[:5]}")
+            unreviewed = [p.name for p in entries if p.is_file() and p.suffix.lower() not in IMAGE_EXTENSIONS]
+            if unreviewed:
+                raise ValueError(f"Unreviewed file types in {split}/{class_id}: {unreviewed[:5]}")
+            files = sorted(p for p in entries
                            if p.is_file() and p.suffix.lower() in IMAGE_EXTENSIONS)
             if len(files) < minimum:
                 raise ValueError(f"{split}/{class_id} has {len(files)} images, requires {minimum}")
