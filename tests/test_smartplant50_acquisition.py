@@ -103,7 +103,7 @@ class SourceAcquisitionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             result = mod.download_verified(None, entry, dataset, Path(d), remaining_bytes=100)
             self.assertEqual(result["status"], "SKIPPED")
-            self.assertFalse(Path(d).exists())
+            self.assertEqual(list(Path(d).iterdir()), [])
 
 
 if __name__ == "__main__":
