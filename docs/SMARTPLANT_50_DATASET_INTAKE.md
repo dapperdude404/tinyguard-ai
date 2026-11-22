@@ -36,3 +36,28 @@ The first command checks structure and reports missing evidence. The second **mu
 Open `notebooks/SmartPlant_50_Dataset_and_Training.ipynb`. It uses a private Drive folder `SmartPlant50/data/expanded/` with the verified `class_plan.json`, all 50 folders c000–c049 in train/val/test, and optionally `groups.csv` with plant/farm groups. Training should be postponed if `groups.csv` cannot be established because split independence is uncertain.
 
 The isolated 50-class scripts train a verified MobileNetV3-Small warm-start model and create metrics, confusion matrix and SHA-256, but **no valid performance result exists yet**.
+
+## Publisher checks — class-mapping evidence (22 November 2026)
+
+The following facts are taken from the publishers' public dataset descriptions, **not** from downloaded or audited training files. All corresponding register rows remain unapproved.
+
+| Source | Publisher-confirmed labels/data | Important missing evidence |
+| --- | --- | --- |
+| [Mango Leaf Disease Dataset](https://data.mendeley.com/datasets/7ghdbftp54/1) | 250 processed Healthy, 326 Anthracnose and 206 Powdery Mildew images; publisher also reports augmented derivatives and CC BY 4.0 | Image provenance, originals-only split, attribution records and scientific label review |
+| [Guava Fruits and Leaves](https://data.mendeley.com/datasets/fspx44mwfp/1) | Leaf subset includes Healthy (1,498 originals) and Anthracnose (237 originals). The dataset calls a separate label **Dot**, not **Leaf Spot**; license shown as CC BY 4.0 | `Guava | Leaf Spot` needs an independently verified label source; do not silently rename Dot |
+| [Paddy Doctor](https://paddydoc.github.io/dataset/) | Field dataset lists Normal leaf, Brown spot and Blast | Exact `Rice | Leaf Blast` mapping, usage terms, split provenance, and image-file audit |
+| [Wheat nitrogen deficiency and leaf rust](https://data.mendeley.com/datasets/th422bg4yd/1) | Includes control/healthy leaves and Leaf rust; publisher describes 368 rust and 491 corresponding control photographs; CC BY 4.0 | It does **not** establish a Powdery Mildew class; source needed for `Wheat | Powdery Mildew` |
+
+### Improved local diagnostics
+
+```bash
+python scripts/check_smartplant_sources.py
+python scripts/inventory_smartplant50.py --dataset /path/to/expanded
+python scripts/inventory_smartplant50.py --dataset /path/to/expanded --require-complete
+```
+
+The inventory never creates images, reassigns diagnoses, or starts training. It counts only recognized original image filenames and checks class folder structure plus the `groups.csv` provenance map. It **does not decode images**. The separate strict audit must still check image content and hashes before training.
+
+The Colab notebook now uses subprocesses with `check=True` so failed source, structural and image audits stop the cell; its final training cell repeats all gates if run out of sequence. The notebook clones the research-intake and preserved model-development branches separately, because the current `main` branch no longer contains the expanded training scripts.
+
+**Next non-code action:** recover or collect real licensed training photographs, especially `Guava | Leaf Spot`, `Wheat | Powdery Mildew`, and the old 29-class data. Do not claim data acquisition, reproducibility or a 50-class accuracy until source files and grouped splits are actually available.
