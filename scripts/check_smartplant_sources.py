@@ -48,7 +48,10 @@ def inspect(path):
             raise ValueError("Negative image count for " + expected_id)
         if row["source_url"] and not row["source_url"].startswith("https://"):
             raise ValueError("Source URL must be HTTPS")
-        evidence_ready = (row["license_verified"] == "yes" and
+        # A candidate never counts as ready merely because flags have been edited.
+        # Approval must be explicit; actual image files are checked separately.
+        evidence_ready = (row["stage"] == "approved" and
+                          row["license_verified"] == "yes" and
                           row["taxonomy_verified"] == "yes" and
                           row["source_grouped"] == "yes" and count >= 30 and
                           bool(row["source_url"]))
