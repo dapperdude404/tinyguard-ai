@@ -1,0 +1,59 @@
+name: SmartPlant 50 Automated Source Acquisition Checks
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/acquire_smartplant50_sources.py'
+      - 'scripts/prepare_smartplant50_candidates.py'
+      - 'scripts/verified_import_smartplant50.py'
+      - 'tests/test_smartplant50_acquisition.py'
+      - 'tests/test_smartplant50_candidates.py'
+      - 'tests/test_smartplant50_verified_import.py'
+      - 'dataset_sources/50class_source_register.csv'
+      - 'notebooks/SmartPlant_50_Dataset_and_Training.ipynb'
+      - '.github/workflows/smartplant50-auto-acquisition.yml'
+  push:
+    branches:
+      - feature/smartplant50-auto-acquire-verified-import
+
+jobs:
+  safe-acquisition:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install 'requests>=2.32,<3' 'pillow>=10,<13'
+      - name: Offline provider URL, checksum, label, provenance and staging tests
+        run: |
+          python -m unittest discover -s tests -p 'test_smartplant50_acquisition.py' -v
+          python -m unittest discover -s tests -p 'test_smartplant50_candidates.py' -v
+          python -m unittest discover -s tests -p 'test_smartplant50_verified_import.py' -v
+      - name: Validate Colab acquisition notebook and research gates
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('notebooks/SmartPlant_50_Dataset_and_Training.ipynb')
+          notebook = json.loads(p.read_text(encoding='utf-8'))
+          assert notebook['nbformat'] == 4
+          codes = [c for c in notebook['cells'] if c['cell_type'] == 'code']
+          source = '\n'.join(''.join(c['source']) for c in codes)
+          for i, cell in enumerate(codes):
+              compile(''.join(cell['source']), f'code-cell-{i}', 'exec')
+          for item in (
+              'acquire_smartplant50_sources.py',
+              'prepare_smartplant50_candidates.py',
+              'verified_import_smartplant50.py',
+              'audit_expanded_dataset.py',
+              '--require-ready',
+              '--require-complete',
+          ):
+              assert item in source, f'Notebook missing important safety gate: {item}'
+          assert 'STAGE_APPROVED = False' in source
+          print(f'Notebook and {len(codes)} Python cells: PASS')
+          PY
+      - name: Ensure data provenance register is still unapproved
+        run: python scripts/check_smartplant_sources.py
