@@ -50,6 +50,17 @@ def test_duplicate_or_collision_fails_closed():
         build_plan(LEGACY[:-1])
 
 
+def test_corn_maize_alias_collisions_cannot_be_trained_twice():
+    # Both of these old labels already exist in the deployed 29-class model.
+    old = LEGACY[:27] + ["Corn (Maize) | Healthy", "Corn (Maize) | Northern Leaf Blight"]
+    plan = build_plan(old)
+    assert "Maize | Southern Rust" in [x["name"] for x in plan["classes"]]
+    assert "Maize | Southern Leaf Blight" in [x["name"] for x in plan["classes"]]
+    assert "Maize | Healthy" not in [x["name"] for x in plan["classes"][29:]]
+    with pytest.raises(ValueError, match="Semantic alias collision"):
+        build_plan(LEGACY[:28] + ["Corn (Maize) | Southern Rust"])
+
+
 def test_corrupt_mapping_is_rejected(tmp_path):
     plan = build_plan(LEGACY)
     plan["classes"][38]["index"] = 0
