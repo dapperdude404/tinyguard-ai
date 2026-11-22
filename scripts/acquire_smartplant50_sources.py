@@ -146,8 +146,8 @@ def normalise_file(item: dict) -> dict:
     if not UUID_RE.fullmatch(file_id):
         raise ValueError("Provider file is missing a valid UUID")
     size = detail.get("size", item.get("size"))
-    if not isinstance(size, int) or not 0 <= size <= MAX_FILE_BYTES:
-        raise ValueError("Provider file size missing or exceeds limit")
+    if not isinstance(size, int) or size < 0:
+        raise ValueError("Provider file size missing or invalid")
     digest = detail.get("sha256_hash") or item.get("sha256_hash") or ""
     if not isinstance(digest, str):
         digest = ""
@@ -156,7 +156,8 @@ def normalise_file(item: dict) -> dict:
         raise ValueError("Invalid provider SHA-256")
     return {"filename": name, "file_id": file_id, "size": size,
             "provider_sha256": digest,
-            "eligible_file_type": Path(name).suffix.lower() in FILE_TYPES}
+            "eligible_file_type": Path(name).suffix.lower() in FILE_TYPES,
+            "within_size_limit": size <= MAX_FILE_BYTES}
 
 
 def discover(session, register: Path) -> list[dict]:
@@ -200,6 +201,8 @@ def download_verified(session, entry: dict, dataset: dict, folder: Path,
         return {"status": "SKIPPED", "reason": "License not positively verified"}
     if not entry["eligible_file_type"]:
         return {"status": "SKIPPED", "reason": "Unsupported file extension"}
+    if not entry.get("within_size_limit", True):
+        return {"status": "SKIPPED", "reason": "Provider file larger than allowed limit"}
     if not entry["provider_sha256"]:
         return {"status": "SKIPPED", "reason": "Missing upstream SHA-256"}
     if entry["size"] > remaining_bytes:
