@@ -3,6 +3,7 @@ import csv
 import hashlib
 import io
 import json
+import random
 import tempfile
 import unittest
 from pathlib import Path
@@ -18,8 +19,8 @@ from scripts.verified_import_smartplant50 import (
 
 def png(seed: int) -> bytes:
     image = Image.new("RGB", (96, 96))
-    points = [((x * 13 + seed * 17) % 256, (y * 17 + x * 5 + seed * 11) % 256,
-               (x * y + seed * 19) % 256) for y in range(96) for x in range(96)]
+    rng = random.Random(seed)
+    points = [tuple(rng.randrange(256) for _ in range(3)) for _ in range(96 * 96)]
     image.putdata(points)
     stream = io.BytesIO()
     image.save(stream, format="PNG")
