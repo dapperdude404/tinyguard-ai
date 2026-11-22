@@ -167,10 +167,10 @@ def discover(session, register: Path) -> list[dict]:
                             params={"version": version})
         if not isinstance(metadata, dict):
             raise ValueError("Unexpected dataset metadata")
-        actual_id = metadata.get("id")
+        actual_id = metadata.get("short_id") or metadata.get("id")
         actual_version = metadata.get("version")
         if actual_id != dataset_id or int(actual_version) != version:
-            raise ValueError("Dataset ID/version mismatch in public API")
+            raise ValueError("Dataset short ID/version mismatch in public API")
         permitted = find_cc_by_4(metadata)
         source_files = list_public_files(session, dataset_id, version)
         files = [normalise_file(item) for item in source_files]
