@@ -55,7 +55,7 @@ Additional publisher descriptions reviewed:
 | [Banana and Banana Leaf Dataset](https://data.mendeley.com/datasets/5nfjzntwd8/1) | Healthy Banana Leaf (1,256 raw), Black Sigatoka (170 raw), plus other disease categories; CC BY 4.0 | **Yellow Sigatoka is not listed** and needs a separate source |
 | [ABCGMP six-crop dataset](https://data.mendeley.com/datasets/fhbvmpcyy2/3) | Citrus Healthy Leaf and a category spelled **Cancker Leaf**; CC BY 4.0 | Require qualified review before mapping the misspelled category to Citrus Canker |
 | [Papaya Leaf Disease Image Dataset](https://data.mendeley.com/datasets/3kwgxg4stb/1) | Healthy (594 raw) and Curl (778 raw) leaf images; CC BY 4.0 | Confirm whether `Curl` is appropriately labeled as `Papaya | Leaf Curl` |
-| [Open-Source Multi-Format Maize Leaf Dataset](https://data.mendeley.com/datasets/sb4wwjs8bz/1) | Healthy Leaves and Northern Corn Leaf Blight; CC BY 4.0 | Confirm common disease-name alias and original source-level split |
+| [Open-Source Multi-Format Maize Leaf Dataset](https://data.mendeley.com/datasets/sb4wwjs8bz/1) | Healthy and Northern Leaf Blight are already covered under legacy `Corn (Maize)` | NEW maize classes are Southern Leaf Blight and Southern Rust; no verified source is present in the connected Drive |
 
 **Dataset gaps:** `Guava | Leaf Spot`, `Banana | Yellow Sigatoka`, and `Wheat | Powdery Mildew` currently have no verified direct class-level source in this registry. Research different datasets rather than renaming unrelated diseases.
 
@@ -72,3 +72,45 @@ The inventory never creates images, reassigns diagnoses, or starts training. It 
 The Colab notebook now uses subprocesses with `check=True` so failed source, structural and image audits stop the cell; its final training cell repeats all gates if run out of sequence. The notebook clones the research-intake and preserved model-development branches separately, because the current `main` branch no longer contains the expanded training scripts.
 
 **Next non-code action:** recover or collect real licensed training photographs, especially `Guava | Leaf Spot`, `Wheat | Powdery Mildew`, and the old 29-class data. Do not claim data acquisition, reproducibility or a 50-class accuracy until source files and grouped splits are actually available.
+
+## Google Drive-only data intake (23 November 2026)
+
+A dedicated private [SmartPlant50 Drive workspace](https://drive.google.com/drive/folders/1bCO4AoqpZlMjJ41hyagkBGHBSHTgo-2M) has been created. **This is folder preparation, not dataset completion.**
+
+- `SmartPlant50/incoming_new_crops/`: crop-wise folders for Mango, Guava, Banana, Rice, Wheat, Citrus, Maize and Papaya. Own photographs can be added through the Google Drive phone app; disease labels require expert review.
+- `SmartPlant50/data/expanded/`: strict 50-class training/validation/test layout and the generated, verified label plan. The notebook creates empty `c000`–`c049` folders automatically.
+- `SmartPlant50/audit_reports/`: ZIP inventory and mapping candidates, not ground truth.
+- `SmartPlant50/model_artifacts/`: reserved for verified trained weights and research reports, not current production models.
+
+### Existing datasets discovered in the user's Drive
+
+`MyDrive/SmartPlant_Datasets` already has nine archives: Apple.zip, Bell Pepper.zip, Cherry.zip, Corn (Maize).zip, Grape.zip, Peach.zip, Potato.zip, Strawberry.zip and Tomato.zip. **The pipeline can scan these archives directly from the Drive mount—no manual ZIP upload, external photo archive or dataset re-download is required for the inventory.** Archive names and internal folders are *candidate* labels until verified against the original 29-class mapping. An archive alone does not provide independent plant/farm-group identities.
+
+```bash
+python scripts/scan_smartplant_drive_archives.py \
+  --source-dir /content/drive/MyDrive/SmartPlant_Datasets \
+  --report-dir /content/drive/MyDrive/SmartPlant50/audit_reports
+```
+
+The scanner reads ZIP entries without extraction by default, writes `legacy_zip_inventory.json` and `legacy_zip_class_candidates.csv`, and blocks unsafe paths, symlinks, duplicates and suspicious uncompressed sizes. Use `--stage-dir /content/smartplant50_legacy_staging` only for optional **temporary, unapproved** image extraction in a Colab runtime. This never populates training/test sets automatically.
+
+The notebook also uses `SmartPlant_Results/best_model_safe.pt` already in Drive and checks its SHA-256 before constructing the 50-class label plan. This avoids downloading the model from another site. The notebook still uses ordinary Python dependencies and GitHub source code in Colab; it does not pretend to provide a completely network-free Colab environment.
+
+### Correction to proposed 21 new labels
+
+The verified 29-class checkpoint already includes:
+- `c010 Corn (Maize) | Healthy`
+- `c011 Corn (Maize) | Northern Leaf Blight`
+
+These must not be counted again under aliases `Maize | Healthy` or `Maize | Northern Leaf Blight`. The isolated expanded model branch now proposes **`c046 Maize | Southern Leaf Blight`** and **`c047 Maize | Southern Rust`**, neither of which has verified source images in the connected Drive. A crop-alias check refuses duplicate disease targets.
+
+The other new-crop classes currently lack accepted training image evidence as well. We **cannot manufacture authentic disease-positive photographs**; producing a 50-class trained model still requires actual, correctly labeled images. The pipeline refuses to train while any source evidence, original images or provenance split audit is missing.
+
+### What the user no longer needs to do manually
+
+- Re-upload the nine existing ZIP archives.
+- Move the archived checkpoint to a public download link.
+- Manually create 150 `train/val/test` class directories.
+- Build the source inventory by hand.
+
+**Still necessary:** obtain or capture properly labeled original images for new diseases, validate source rights and provenance, and run Colab once with Drive mounted. No raw data is made publicly accessible or merged into GitHub.
