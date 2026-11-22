@@ -138,6 +138,9 @@ def audit_and_plan(review_csv: Path, class_plan: Path, workspace: Path,
     checked: list[dict] = []
     hash_to_original: dict[str, tuple[str, str, str]] = {}
     hash_groups: dict[str, tuple[str, int, str]] = {}
+    # A 64-bit dHash within <=5 bit flips must match in at least one of
+    # 8 disjoint bytes. Use buckets to avoid O(N^2) image comparisons.
+    near_buckets: dict[tuple[int, int], list[str]] = {}
     count = Counter()
     unapproved_count = 0
     repeated = set()
@@ -197,13 +200,20 @@ def audit_and_plan(review_csv: Path, class_plan: Path, workspace: Path,
                         raise ValueError("Cross-class or cross-split exact duplicate detected")
                     # Same-class same-split duplicates are excluded from output.
                     continue
-                for other_group, (other_split, other_hash, other_class) in hash_groups.items():
-                    if other_split != split and (dhash ^ other_hash).bit_count() <= 5:
+                candidates = set()
+                for byte in range(8):
+                    candidates.update(near_buckets.get((byte, (dhash >> (byte * 8)) & 255), []))
+                for other_digest in candidates:
+                    other_split, other_hash, other_class = hash_groups[other_digest]
+                    distance = (dhash ^ other_hash).bit_count()
+                    if other_split != split and distance <= 5:
                         raise ValueError("Likely near-duplicate image crosses splits")
-                    if other_class != class_id and (dhash ^ other_hash).bit_count() <= 1:
+                    if other_class != class_id and distance <= 1:
                         raise ValueError("Likely near-duplicate image has conflicting diagnosis")
                 hash_to_original[digest] = (class_id, split, member)
                 hash_groups[digest] = (split, dhash, class_id)
+                for byte in range(8):
+                    near_buckets.setdefault((byte, (dhash >> (byte * 8)) & 255), []).append(digest)
                 checked.append({
                     "archive": str(archive), "member": member,
                     "archive_sha256": row["archive_sha256"], "original_sha256": digest,
