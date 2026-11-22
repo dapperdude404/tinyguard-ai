@@ -15,7 +15,7 @@ EXPECTED = [
     "Rice | Healthy", "Rice | Brown Spot", "Rice | Leaf Blast",
     "Wheat | Healthy", "Wheat | Leaf Rust", "Wheat | Powdery Mildew",
     "Citrus | Healthy", "Citrus | Canker",
-    "Maize | Healthy", "Maize | Northern Leaf Blight",
+    "Maize | Southern Leaf Blight", "Maize | Southern Rust",
     "Papaya | Healthy", "Papaya | Leaf Curl",
 ]
 COLUMNS = ("class_id", "label", "source_url", "stage", "license_verified",
