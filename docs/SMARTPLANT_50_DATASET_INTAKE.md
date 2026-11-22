@@ -48,6 +48,17 @@ The following facts are taken from the publishers' public dataset descriptions, 
 | [Paddy Doctor](https://paddydoc.github.io/dataset/) | Field dataset lists Normal leaf, Brown spot and Blast | Exact `Rice | Leaf Blast` mapping, usage terms, split provenance, and image-file audit |
 | [Wheat nitrogen deficiency and leaf rust](https://data.mendeley.com/datasets/th422bg4yd/1) | Includes control/healthy leaves and Leaf rust; publisher describes 368 rust and 491 corresponding control photographs; CC BY 4.0 | It does **not** establish a Powdery Mildew class; source needed for `Wheat | Powdery Mildew` |
 
+Additional publisher descriptions reviewed:
+
+| Source | Confirmed source categories | Remaining discrepancy |
+| --- | --- | --- |
+| [Banana and Banana Leaf Dataset](https://data.mendeley.com/datasets/5nfjzntwd8/1) | Healthy Banana Leaf (1,256 raw), Black Sigatoka (170 raw), plus other disease categories; CC BY 4.0 | **Yellow Sigatoka is not listed** and needs a separate source |
+| [ABCGMP six-crop dataset](https://data.mendeley.com/datasets/fhbvmpcyy2/3) | Citrus Healthy Leaf and a category spelled **Cancker Leaf**; CC BY 4.0 | Require qualified review before mapping the misspelled category to Citrus Canker |
+| [Papaya Leaf Disease Image Dataset](https://data.mendeley.com/datasets/3kwgxg4stb/1) | Healthy (594 raw) and Curl (778 raw) leaf images; CC BY 4.0 | Confirm whether `Curl` is appropriately labeled as `Papaya | Leaf Curl` |
+| [Open-Source Multi-Format Maize Leaf Dataset](https://data.mendeley.com/datasets/sb4wwjs8bz/1) | Healthy Leaves and Northern Corn Leaf Blight; CC BY 4.0 | Confirm common disease-name alias and original source-level split |
+
+**Dataset gaps:** `Guava | Leaf Spot`, `Banana | Yellow Sigatoka`, and `Wheat | Powdery Mildew` currently have no verified direct class-level source in this registry. Research different datasets rather than renaming unrelated diseases.
+
 ### Improved local diagnostics
 
 ```bash
