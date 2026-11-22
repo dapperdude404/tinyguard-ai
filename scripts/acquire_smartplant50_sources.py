@@ -207,7 +207,11 @@ def download_verified(session, entry: dict, dataset: dict, folder: Path,
     file_name = entry["file_id"] + Path(entry["filename"]).suffix.lower()
     destination = folder / file_name
     if destination.exists():
-        digest = hashlib.sha256(destination.read_bytes()).hexdigest()
+        checksum = hashlib.sha256()
+        with destination.open("rb") as stream:
+            for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                checksum.update(chunk)
+        digest = checksum.hexdigest()
         if digest == entry["provider_sha256"] and destination.stat().st_size == entry["size"]:
             return {"status": "VERIFIED_QUARANTINE", "path": str(destination),
                     "sha256": digest, "size": entry["size"], "cached": True}
