@@ -7,6 +7,8 @@ on:
       - 'tests/test_smartplant_sources.py'
       - 'tests/test_smartplant50_inventory.py'
       - 'scripts/inventory_smartplant50.py'
+      - 'scripts/scan_smartplant_drive_archives.py'
+      - 'tests/test_smartplant_drive_archives.py'
       - '.github/workflows/smartplant-50-source-readiness.yml'
       - 'notebooks/SmartPlant_50_Dataset_and_Training.ipynb'
   push:
@@ -27,6 +29,7 @@ jobs:
         run: |
           python -m unittest discover -s tests -p 'test_smartplant_sources.py' -v
           python -m unittest discover -s tests -p 'test_smartplant50_inventory.py' -v
+          python -m unittest discover -s tests -p 'test_smartplant_drive_archives.py' -v
       - name: Validate Colab notebook JSON structure
         run: |
           python - <<'PY'
@@ -41,5 +44,8 @@ jobs:
           source = "\\n".join("".join(c["source"]) for c in codes)
           assert "--require-ready" in source and "--require-complete" in source
           assert source.count("audit_expanded_dataset.py") >= 2
+          assert "scan_smartplant_drive_archives.py" in source
+          assert "best_model_safe.pt" in source
+          assert "class_plan.json" in source
           print("Colab notebook JSON + Python syntax + hard gates: PASS")
           PY
