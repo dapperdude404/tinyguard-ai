@@ -5,6 +5,8 @@ on:
       - 'dataset_sources/**'
       - 'scripts/check_smartplant_sources.py'
       - 'tests/test_smartplant_sources.py'
+      - 'tests/test_smartplant50_inventory.py'
+      - 'scripts/inventory_smartplant50.py'
       - '.github/workflows/smartplant-50-source-readiness.yml'
       - 'notebooks/SmartPlant_50_Dataset_and_Training.ipynb'
   push:
@@ -22,7 +24,9 @@ jobs:
       - name: Validate registry structure and show evidence gaps
         run: python scripts/check_smartplant_sources.py
       - name: Test source status and class order
-        run: python -m unittest discover -s tests -p 'test_smartplant_sources.py' -v
+        run: |
+          python -m unittest discover -s tests -p 'test_smartplant_sources.py' -v
+          python -m unittest discover -s tests -p 'test_smartplant50_inventory.py' -v
       - name: Validate Colab notebook JSON structure
         run: |
           python - <<'PY'
@@ -30,6 +34,12 @@ jobs:
           from pathlib import Path
           notebook=json.loads(Path("notebooks/SmartPlant_50_Dataset_and_Training.ipynb").read_text())
           assert notebook["nbformat"] == 4
-          assert len(notebook["cells"]) >= 5
-          print("Colab notebook schema parse: PASS")
+          assert len(notebook["cells"]) >= 12
+          codes = [cell for cell in notebook["cells"] if cell["cell_type"] == "code"]
+          for i, cell in enumerate(codes):
+              compile("".join(cell["source"]), f"notebook-code-cell-{i}", "exec")
+          source = "\\n".join("".join(c["source"]) for c in codes)
+          assert "--require-ready" in source and "--require-complete" in source
+          assert source.count("audit_expanded_dataset.py") >= 2
+          print("Colab notebook JSON + Python syntax + hard gates: PASS")
           PY
