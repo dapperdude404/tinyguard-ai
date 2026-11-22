@@ -63,6 +63,27 @@ class SourceAcquisitionTests(unittest.TestCase):
             self.assertEqual(mod.source_datasets(csv_path),
                              {("7ghdbftp54", 1): ["c029", "c030"]})
 
+    def test_mendeley_uuid_metadata_uses_short_id_for_dataset_match(self):
+        with tempfile.TemporaryDirectory() as d:
+            register = Path(d) / "register.csv"
+            with register.open("w", newline="") as fh:
+                w = csv.DictWriter(fh, fieldnames=["class_id", "source_url"])
+                w.writeheader()
+                w.writerow({"class_id": "c029",
+                    "source_url": "https://data.mendeley.com/datasets/7ghdbftp54/1"})
+            metadata = {
+                "id": "fa0b1842-a45b-46ad-98de-e949b4c47ce3",
+                "short_id": "7ghdbftp54", "version": 1,
+                "name": "Mango Leaf Disease Dataset",
+                "data_licence": {"short_name": "CC BY 4.0"}
+            }
+            with patch.object(mod, "get_json", return_value=metadata), patch.object(
+                mod, "list_public_files", return_value=[]
+            ):
+                datasets = mod.discover(None, register)
+            self.assertEqual(len(datasets), 1)
+            self.assertTrue(datasets[0]["cc_by_4_metadata_verified"])
+
     def test_sha_verified_download_then_reuse(self):
         data = b"trusted-image-archive-placeholder"
         digest = hashlib.sha256(data).hexdigest()
