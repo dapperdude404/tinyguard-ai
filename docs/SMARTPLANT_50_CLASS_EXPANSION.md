@@ -23,12 +23,12 @@ These remain **test cases**, not evidence of field performance. Never use a sing
 | Rice | Healthy; Brown Spot; Leaf Blast | 3 |
 | Wheat | Healthy; Leaf Rust; Powdery Mildew | 3 |
 | Citrus | Healthy; Canker | 2 |
-| Maize | Healthy; Northern Leaf Blight | 2 |
+| Maize | Southern Leaf Blight; Southern Rust | 2 |
 | Papaya | Healthy; Leaf Curl | 2 |
 | **New categories** | **Total** | **21** |
 | **All categories** | **Existing 29 + proposed 21** | **50** |
 
-**Dataset gate:** These names are *research candidates*. Verify that labels can be assigned reliably and that relevant image rights, provenance and taxonomy are defensible. If actual old labels collide with proposed labels, label-plan generation **fails** rather than silently changing a class. Do not relabel images just to reach 50.
+**Alias correction:** The original 29 classes already contain `Corn (Maize) | Healthy` and `Corn (Maize) | Northern Leaf Blight`. They cannot be counted again under the name `Maize`. The two proposed *new* maize categories are now Southern Leaf Blight and Southern Rust, which need separate, validated photo sources. The label planner explicitly rejects Corn/Maize aliases with the same disease.\n\n**Dataset gate:** These names are *research candidates*. Verify that labels can be assigned reliably and that relevant image rights, provenance and taxonomy are defensible. If actual old labels collide with proposed labels, label-plan generation **fails** rather than silently changing a class. Do not relabel images just to reach 50.
 
 ## Phase A — construct and audit a real dataset
 
