@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from pathlib import Path
 
 LEGACY_CLASS_COUNT = 29
@@ -32,8 +33,8 @@ NEW_LABELS = (
     "Wheat | Powdery Mildew",
     "Citrus | Healthy",
     "Citrus | Canker",
-    "Maize | Healthy",
-    "Maize | Northern Leaf Blight",
+    "Maize | Southern Leaf Blight",
+    "Maize | Southern Rust",
     "Papaya | Healthy",
     "Papaya | Leaf Curl",
 )
@@ -52,12 +53,34 @@ def validate_class_names(names: list[str], expected: int | None = None) -> list[
     return names
 
 
+def canonical_crop_disease(name: str) -> tuple[str, str]:
+    """Prevent semantic crop aliases from creating duplicate training targets."""
+    crop, sep, condition = name.partition("|")
+    if not sep or not condition.strip():
+        raise ValueError(f"Crop/disease label lacks a | separator: {name}")
+    crop_key = re.sub(r"[^a-z0-9]", "", crop.casefold())
+    disease_key = re.sub(r"[^a-z0-9]", "", condition.casefold())
+    if crop_key in {"cornmaize", "corn", "maize"}:
+        crop_key = "maize"
+    return crop_key, disease_key
+
+
+def reject_alias_collisions(names: list[str]) -> None:
+    seen: dict[tuple[str, str], str] = {}
+    for name in names:
+        key = canonical_crop_disease(name)
+        if key in seen:
+            raise ValueError(f"Semantic alias collision: {seen[key]} vs {name}")
+        seen[key] = name
+
+
 def build_plan(legacy_names: list[str]) -> dict:
     validate_class_names(legacy_names, LEGACY_CLASS_COUNT)
     new = list(NEW_LABELS)
     validate_class_names(new, 21)
     combined = legacy_names + new
     validate_class_names(combined, TARGET_CLASS_COUNT)
+    reject_alias_collisions(combined)
     classes = [
         {"id": f"c{index:03d}", "index": index, "name": name,
          "source": "legacy" if index < LEGACY_CLASS_COUNT else "new"}
@@ -81,6 +104,7 @@ def read_plan(path: str | Path) -> dict:
         raise ValueError("Expected exactly 50 class-plan entries")
     names = [item["name"] for item in classes]
     validate_class_names(names, TARGET_CLASS_COUNT)
+    reject_alias_collisions(names)
     for i, item in enumerate(classes):
         if (item["id"] != f"c{i:03d}" or item["index"] != i or
                 item["source"] != ("legacy" if i < LEGACY_CLASS_COUNT else "new")):
