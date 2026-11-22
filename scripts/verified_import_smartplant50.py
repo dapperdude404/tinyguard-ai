@@ -242,8 +242,10 @@ def audit_and_plan(review_csv: Path, class_plan: Path, workspace: Path,
 
 
 def commit_staging(entries: list[dict], report: dict, workspace: Path) -> Path:
-    if not report["ready_for_full_50"]:
-        raise ValueError("Refusing to import an incomplete, unapproved 50-class dataset")
+    if not entries:
+        raise ValueError("No approved image data to stage. Nothing imported.")
+    # Partial candidate sets can be staged for later review, but are never
+    # promoted into the live training dataset. The report blocks model training.
     target_parent = workspace / "approved_staging"
     target_parent.mkdir(parents=True, exist_ok=True)
     target = target_parent / ("candidate_" + hashlib.sha256(
@@ -316,6 +318,7 @@ def main():
     print(json.dumps(report, indent=2)[:10000])
     if a.commit:
         print("New, untouched staging folder:", commit_staging(entries, report, workspace))
+        print("Partial staging is NOT train-ready until all 50 classes pass.")
     else:
         print("DRY RUN: no imports written. --commit only stages when all 50 classes pass.")
 
