@@ -42,5 +42,21 @@ class SourceRegisterTests(unittest.TestCase):
                 inspect(path)
 
 
+    def test_candidate_is_not_approved_even_with_flags(self):
+        with REGISTER.open(newline="", encoding="utf-8") as fh:
+            rows = list(csv.DictReader(fh))
+        rows[0]["license_verified"] = "yes"
+        rows[0]["taxonomy_verified"] = "yes"
+        rows[0]["source_grouped"] = "yes"
+        rows[0]["original_image_count"] = "99"
+        # Source metadata alone cannot automatically grant scientific approval.
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "registry.csv"
+            with path.open("w", newline="", encoding="utf-8") as fh:
+                writer = csv.DictWriter(fh, fieldnames=list(COLUMNS))
+                writer.writeheader()
+                writer.writerows(rows)
+            self.assertEqual(inspect(path)["evidence_ready"], 0)
+
 if __name__ == "__main__":
     unittest.main()
