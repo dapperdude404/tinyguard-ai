@@ -1,0 +1,55 @@
+name: Bug report
+description: Report reproducible incorrect behavior without sharing private data.
+title: "[Bug] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a problem. **Do not include passwords, tokens, private documents, or identifiable personal data.** Remove sensitive paths and data from screenshots and logs.
+  - type: textarea
+    id: description
+    attributes:
+      label: Problem
+      description: What happened, and what did you expect?
+      placeholder: Describe actual and expected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open...
+        2. Select...
+        3. Observe...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Give the release tag or commit SHA when known.
+    validations:
+      required: false
+  - type: input
+    id: environment
+    attributes:
+      label: Device and environment
+      placeholder: OS, browser/runtime, device type, relevant version
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Safe logs or screenshots
+      description: Include sanitized error messages and what you actually tested; never include secrets or personal data.
+    validations:
+      required: false
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and removed sensitive information.
+          required: true
