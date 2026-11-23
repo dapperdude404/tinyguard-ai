@@ -12,6 +12,13 @@
 
 > **Research prototype, not a certified agricultural diagnostic system.** Model class probabilities are not calibrated diagnostic confidence. A displayed 97.6% probability for one image does **not** establish 97.6% real-world accuracy.
 
+
+> **Quick discovery:** MobileNetV3 plant leaf research prototype with PyTorch, visual analysis and a Streamlit demo.
+>
+> **Start here:** [Streamlit demo](https://tinyguard-ai-rhqchfw8wkoqetj3zcwcsd.streamlit.app/) · [Research methodology](docs/SMARTPLANT_RESEARCH.md) · [Contribution guide](CONTRIBUTING.md) · [Report a bug](https://github.com/dapperdude404/tinyguard-ai/issues/new?template=bug_report.yml) · [Discovery & social preview](DISCOVERY_PACK.md).
+>
+> **Scope:** Research prototype, not a certified agricultural diagnosis. Model class probabilities are not real-world accuracy.
+
 ## ✨ What makes SmartPlant AI different?
 
 | Capability | Implementation | Status |
