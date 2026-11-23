@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Contributor guidance
+    url: https://github.com/dapperdude404
+    about: Please read this project's CONTRIBUTING.md before opening a pull request. Avoid posting security-sensitive details publicly.
