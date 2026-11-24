@@ -1,0 +1,49 @@
+name: Feature request
+description: Suggest a useful, testable improvement with clear scope.
+title: "[Feature] "
+labels: []
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: User need
+      description: What problem does this solve, and for whom?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Describe the user workflow and what is explicitly out of scope.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - [ ] A user can...
+        - [ ] Failure state is clear...
+        - [ ] Tests cover...
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Privacy, safety, accessibility or data considerations
+      description: Include research evidence/provenance requirements where applicable. Do not post secret credentials or personal data.
+    validations:
+      required: false
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Implementation scope
+      options:
+        - Documentation only
+        - Frontend or user experience
+        - Backend, data, or authentication
+        - Research or evaluation
+        - Packaging or deployment
+        - Other
+    validations:
+      required: true
