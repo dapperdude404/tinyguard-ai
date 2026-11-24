@@ -7,7 +7,7 @@ import streamlit as st
 from PIL import Image
 from smartplant.core import decode_image, leaf_observations, load_model, predict
 from smartplant.cnn import load_cnn, predict_cnn
-from smartplant.model_download import ensure_cnn_checkpoint
+from smartplant.model_registry import selected_cnn_checkpoint
 
 st.set_page_config(page_title="SmartPlant AI | Plant Health Research", page_icon="🌿", layout="wide")
 st.markdown("""<style>
@@ -51,12 +51,13 @@ with tab1:
             c.metric("Brown", f"{observations['brown_pixels_pct']}%")
             st.caption("These are simple pixel-color heuristics. They are not plant segmentation, disease severity, or a clinical diagnosis.")
             cnn = None
-            cnn_path = "models/smartplant_mobilenetv3.pt"
-            checkpoint_ready = False
+            cnn_path = None
+            model_kind = "legacy"
             try:
-                checkpoint_ready = ensure_cnn_checkpoint(cnn_path) is not None
-            except Exception as exc:
+                cnn_path, model_kind = selected_cnn_checkpoint()
+            except (ValueError, RuntimeError, OSError) as exc:
                 st.warning(f"CNN checkpoint verification failed: {exc}")
+            checkpoint_ready = cnn_path is not None
             if checkpoint_ready:
                 try:
                     cnn = load_cnn(cnn_path)
@@ -64,6 +65,7 @@ with tab1:
                     st.error(f"CNN checkpoint could not be loaded: {exc}")
             if cnn is not None:
                 results = predict_cnn(image, cnn)
+                st.caption(f"Loaded {len(cnn[1])} CNN categories · model: {model_kind}")
                 st.success(f"CNN predicted category: **{results[0][0].replace('_', ' ')}**")
                 st.metric("CNN model class probability", f"{results[0][1]:.1%}")
                 st.caption("Class probability is not a verified diagnosis confidence.")
@@ -94,11 +96,11 @@ with tab1:
 with tab2:
     st.subheader("Simple classroom explanation")
     st.markdown("""
-**Step 1 — Image preprocessing.** Convert the uploaded image to RGB and resize it to 128 × 128 pixels.
+**CNN preprocessing:** Convert the uploaded image to RGB, resize the short side to 176, center-crop 160 × 160, and apply ImageNet normalization. The CNN uses its own trained class list.
 
 **Step 2 — Feature extraction.** Compute HOG texture/edge features and color histograms.
 
-**Step 3 — Classification.** A trained Random Forest maps these features to labeled disease categories.
+**Step 3 — Classification.** When an approved CNN checkpoint is available, MobileNetV3-Small produces as many category scores as its indexed labels define. The Random Forest is a separate baseline.
 
 **Step 4 — Interpret the result.** Show the predicted class and competing class probabilities, alongside simple color statistics.
 
@@ -116,7 +118,7 @@ with tab3:
 
 **Evaluation plan:** Use a labeled dataset, separate train/validation/test sets, group near-duplicate images by source plant, measure macro F1 and per-class recall, and test with new field photographs.
 
-**Current limitation:** CNN inference is integrated but no trained CNN checkpoint is bundled. Do not claim CNN accuracy until a checkpoint is trained and independently evaluated.
+**Current limitation:** The deployed, verified default CNN has 29 classes; a 50-class replacement is an optional development target. Expanded training needs all original and new class images plus independent test evaluation. Neither model's high probability proves field accuracy.
 
 **Deployment:** Connect this GitHub repository to Streamlit Community Cloud, use branch `main`, and set `app.py` as the entrypoint.
 
