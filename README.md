@@ -19,6 +19,12 @@
 >
 > **Scope:** Research prototype, not a certified agricultural diagnosis. Model class probabilities are not real-world accuracy.
 
+## 📌 Full project report & TinyML roadmap
+
+**[Read the SmartPlant AI / TinyGuard Complete Project Report (24 November 2026)](docs/SMARTPLANT_TINYML_COMPLETE_PROJECT_REPORT_2026-11-24.md)** — an evidence-aware record of what we built, tested, rolled back, still need to validate, and how to feature SmartPlant AI alongside OCTO AI on a professional GitHub profile.
+
+**Project distinction:** SmartPlant AI is a plant-leaf image-research app with a 29-class Streamlit CNN and an experimental Android/ONNX branch. The older TinyGuard/TinyML concept is a separate archival research track; phone-based ONNX does **not** prove microcontroller TinyML performance. OCTO AI is an independent writing/document project, linked for consistent portfolio presentation rather than shared model capabilities.
+
 ## ✨ What makes SmartPlant AI different?
 
 | Capability | Implementation | Status |
