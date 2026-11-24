@@ -1,0 +1,23 @@
+name: SmartPlant IoT Cloud Security Tests
+on:
+  pull_request:
+    paths:
+      - 'iot_cloud/**'
+      - 'requirements-iot.txt'
+      - 'tests/test_iot_cloud.py'
+      - 'tests/test_iot_android.py'
+      - '.github/workflows/iot-monitoring.yml'
+      - 'android-edge/**'
+  push:
+    branches: [feature/smartplant-iot-cloud-monitoring-v1]
+jobs:
+  api-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -r requirements-iot.txt
+      - name: API security and Android consent tests
+        run: python -m pytest -q tests/test_iot_cloud.py tests/test_iot_android.py

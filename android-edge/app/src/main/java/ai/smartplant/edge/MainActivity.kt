@@ -10,6 +10,8 @@ import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
+import android.text.InputType
+import android.widget.EditText
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -33,13 +35,15 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.UUID
 import java.util.concurrent.Executors
 import kotlin.math.roundToInt
 
 /**
  * SmartPlant Edge V2: offline camera / gallery + ONNX inference.
- * The app deliberately has no android.permission.INTERNET.
- * Scan history contains only class labels, scores and timestamps, never image bytes.
+ * Offline CNN inference never calls the cloud.
+ * An OPTIONAL explicit HTTPS sync sends metadata only; no leaf photos or locations.
+ * Scan history contains class labels, scores and timestamps, never image bytes.
  */
 class MainActivity : ComponentActivity() {
     private val bg = Color.rgb(245, 249, 246)
@@ -59,6 +63,9 @@ class MainActivity : ComponentActivity() {
     private lateinit var cropSpinner: Spinner
     private lateinit var cameraButton: Button
     private lateinit var galleryButton: Button
+    private lateinit var syncButton: Button
+    private lateinit var syncStatus: TextView
+    private var lastScanPayload: JSONObject? = null
     private var photoUri: Uri? = null
     private var cameraFile: File? = null
 
@@ -103,7 +110,7 @@ class MainActivity : ComponentActivity() {
         titleGroup.addView(label("SmartPlant AI", 27f, forest, true))
         titleGroup.addView(label("EDGE AI  /  PLANT HEALTH", 11f, emerald, true))
         heading.addView(titleGroup, LinearLayout.LayoutParams(0, -2, 1f))
-        heading.addView(label("● OFFLINE", 12f, forest, true).apply {
+        heading.addView(label("● ON-DEVICE AI", 12f, forest, true).apply {
             background = rounded(Color.rgb(226, 243, 233), 20)
             setPadding(dp(11), dp(8), dp(11), dp(8))
             contentDescription = "Offline inference, no internet connection needed"
@@ -125,7 +132,7 @@ class MainActivity : ComponentActivity() {
             addView(label("Capture a leaf photo or choose one from your phone. Our 29-class CNN runs entirely on your device.", 14f,
                 Color.rgb(224, 245, 232)))
             space(this, 12)
-            addView(label("PRIVATE BY DESIGN  ·  NO CLOUD UPLOAD", 10f, Color.rgb(200, 237, 213), true))
+            addView(label("LEAF PHOTOS STAY LOCAL  ·  OPTIONAL METADATA SYNC", 10f, Color.rgb(200, 237, 213), true))
         }
         content.addView(welcome)
         space(content, 18)
@@ -229,6 +236,23 @@ class MainActivity : ComponentActivity() {
         historyPanel = card()
         content.addView(historyPanel)
         renderHistory()
+        space(content, 20)
+
+        content.addView(section("04", "IoT Cloud Monitoring"))
+        space(content, 10)
+        val syncCard = card()
+        syncCard.addView(label("Share scan metadata (optional)", 17f, ink, true))
+        space(syncCard, 7)
+        syncCard.addView(label("Your leaf photos and model inference stay on this phone. Only an approved category, score, selected crop and timestamp can be synced to your secured cloud dashboard.", 13f, muted))
+        space(syncCard, 12)
+        syncButton = actionButton("☁  Sync latest scan", emerald, Color.WHITE)
+        syncButton.isEnabled = false
+        syncCard.addView(syncButton, LinearLayout.LayoutParams(-1, dp(52)))
+        space(syncCard, 9)
+        syncStatus = label("Nothing is sent automatically. Scan a leaf first.", 12f, muted)
+        syncCard.addView(syncStatus)
+        syncButton.setOnClickListener { showSyncDialog() }
+        content.addView(syncCard)
         space(content, 16)
         content.addView(label("Research use only. Model probabilities are not verified diagnostic confidence, and results should not be used alone for crop treatment decisions.", 12f, muted))
     }
@@ -250,8 +274,11 @@ class MainActivity : ComponentActivity() {
                     placeholder.visibility = View.GONE
                     showPredictions(predictions.take(5), assessment)
                     saveHistory(predictions.first())
+                    lastScanPayload = buildSyncPayload(predictions.take(5), chosenCrop)
+                    syncButton.isEnabled = true
+                    syncStatus.text = "Ready for optional sync · Your photo stays on the phone"
                     renderHistory()
-                    status.text = "Analysis complete · No image uploaded to the cloud"
+                    status.text = "Analysis complete · Leaf photo kept on device"
                     setBusy(false)
                 }
             } catch (e: Exception) {
@@ -392,6 +419,92 @@ class MainActivity : ComponentActivity() {
                 space(historyPanel, 11)
             }
         }
+    }
+
+
+    private fun buildSyncPayload(predictions: List<Prediction>, chosenCrop: String?): JSONObject {
+        val top = predictions.first()
+        val topFive = JSONArray()
+        for (prediction in predictions) {
+            topFive.put(JSONObject()
+                .put("label", prediction.name)
+                .put("probability", prediction.probability.toDouble()))
+        }
+        return JSONObject()
+            .put("scan_id", UUID.randomUUID().toString())
+            .put("captured_at_ms", System.currentTimeMillis())
+            .put("selected_crop",
+                if (chosenCrop.isNullOrBlank() || chosenCrop == "Auto / unknown") JSONObject.NULL
+                else chosenCrop)
+            .put("top_label", top.name)
+            .put("top_probability", top.probability.toDouble())
+            .put("top_five", topFive)
+    }
+
+    private fun showSyncDialog() {
+        val payload = lastScanPayload ?: run {
+            syncStatus.text = "First scan a leaf to prepare metadata."
+            return
+        }
+        val inputContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(18), dp(8), dp(18), dp(4))
+        }
+        inputContainer.addView(label(
+            "No leaf images are sent. You are sharing only crop, top predictions, scores and scan time.",
+            13f, muted))
+        space(inputContainer, 10)
+        val urlField = EditText(this).apply {
+            hint = "https://your-iot-api.example.com"
+            isSingleLine = true
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
+            setText(history.getString("iot_api_url", ""))
+            contentDescription = "HTTPS IoT API base URL"
+        }
+        inputContainer.addView(urlField)
+        val tokenField = EditText(this).apply {
+            hint = "IoT ingest token"
+            isSingleLine = true
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            contentDescription = "Secret ingest token (not stored)"
+        }
+        inputContainer.addView(tokenField)
+        AlertDialog.Builder(this)
+            .setTitle("Sync this scan to IoT cloud?")
+            .setView(inputContainer)
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Send once") { _, _ ->
+                val apiBase = urlField.text.toString().trim()
+                val token = tokenField.text.toString().trim()
+                if (apiBase.isBlank() || token.isBlank()) {
+                    syncStatus.text = "Enter an HTTPS API address and ingest token."
+                } else {
+                    // Keep URL for convenience, but NEVER store the secret ingest token.
+                    history.edit().putString("iot_api_url", apiBase).apply()
+                    syncButton.isEnabled = false
+                    syncStatus.text = "Sending approved metadata securely..."
+                    executor.execute {
+                        try {
+                            val result = CloudSync.send(apiBase, token, payload)
+                            runOnUiThread {
+                                syncStatus.text = if (result.duplicate) {
+                                    "This scan was already received by the cloud."
+                                } else {
+                                    "Metadata synced · Review flag: " + result.reviewFlag
+                                }
+                                syncButton.isEnabled = true
+                            }
+                        } catch (exc: Exception) {
+                            runOnUiThread {
+                                syncStatus.text = "Sync failed: " +
+                                    (exc.localizedMessage ?: "check network and HTTPS API")
+                                syncButton.isEnabled = true
+                            }
+                        }
+                    }
+                }
+            }
+            .show()
     }
 
     private fun setBusy(value: Boolean) {

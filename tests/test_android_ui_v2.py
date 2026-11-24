@@ -29,9 +29,10 @@ def test_camera_exif_and_bounded_decode():
     assert "inSampleSize = sample" in source
     assert "FileProvider.getUriForFile" in source
 
-def test_no_network_permissions_or_storage_permissions():
+def test_no_unnecessary_camera_or_storage_permissions():
     manifest = (APP / "AndroidManifest.xml").read_text()
-    assert "android.permission.INTERNET" not in manifest
+    assert "android.permission.INTERNET" in manifest
+    assert 'android:usesCleartextTraffic="false"' in manifest
     assert "android.permission.READ_EXTERNAL_STORAGE" not in manifest
     assert "android.permission.CAMERA" not in manifest
 

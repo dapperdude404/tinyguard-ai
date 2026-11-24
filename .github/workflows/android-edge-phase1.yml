@@ -81,7 +81,7 @@ jobs:
         run: gradle :app:testDebugUnitTest :app:assembleDebug --no-daemon --stacktrace
       - uses: actions/upload-artifact@v4
         with:
-          name: smartplant-edge-phase2-debug-UNTESTED
+          name: smartplant-edge-iot-phase3-debug-UNTESTED
           path: android-edge/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7

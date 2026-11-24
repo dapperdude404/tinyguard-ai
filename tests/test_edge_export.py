@@ -8,9 +8,10 @@ def test_export_script_compiles():
     source = (ROOT / "scripts/export_smartplant_onnx.py").read_text(encoding="utf-8")
     ast.parse(source)
 
-def test_android_has_no_internet_permission():
+def test_android_opt_in_tls_permission():
     manifest = (ROOT / "android-edge/app/src/main/AndroidManifest.xml").read_text()
-    assert "android.permission.INTERNET" not in manifest
+    assert "android.permission.INTERNET" in manifest
+    assert 'android:usesCleartextTraffic="false"' in manifest
 
 def test_manifest_uses_private_file_provider():
     manifest = (ROOT / "android-edge/app/src/main/AndroidManifest.xml").read_text()
