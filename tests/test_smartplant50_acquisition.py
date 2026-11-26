@@ -75,21 +75,35 @@ class SourceAcquisitionTests(unittest.TestCase):
                 "id": "fa0b1842-a45b-46ad-98de-e949b4c47ce3",
                 "short_id": "7ghdbftp54", "version": 1,
                 "name": "Mango Leaf Disease Dataset",
-                "data_licence": {"short_name": "CC BY 4.0"}
+                "data_licence": {"short_name": "CC BY 4.0"},
+                "files": []
             }
-            with patch.object(mod, "get_json", return_value=metadata), patch.object(
-                mod, "list_public_files", return_value=[]
-            ):
+            with patch.object(mod, "get_json", return_value=metadata):
                 datasets = mod.discover(None, register)
             self.assertEqual(len(datasets), 1)
             self.assertTrue(datasets[0]["cc_by_4_metadata_verified"])
+
+    def test_refuse_pinned_version_substitution(self):
+        with tempfile.TemporaryDirectory() as d:
+            register = Path(d) / "register.csv"
+            register.write_text(
+                "class_id,source_url\n"
+                "c029,https://data.mendeley.com/datasets/7ghdbftp54/1\n"
+            )
+            published = {"id": "7ghdbftp54", "version": 2,
+                         "data_licence": {"short_name": "CC BY 4.0"}, "files": []}
+            with patch.object(mod, "get_json", return_value=published):
+                result = mod.discover(None, register)
+            self.assertFalse(result[0]["cc_by_4_metadata_verified"])
+            self.assertEqual(result[0]["files"], [])
+            self.assertIn("pinned version", result[0]["state"])
 
     def test_sha_verified_download_then_reuse(self):
         data = b"trusted-image-archive-placeholder"
         digest = hashlib.sha256(data).hexdigest()
         entry = {"filename": "data.zip", "file_id": "fa0b1842-a45b-46ad-98de-e949b4c47ce3",
                  "size": len(data), "provider_sha256": digest,
-                 "eligible_file_type": True}
+                 "eligible_file_type": True, "download_url": "https://data.mendeley.com/public-files/datasets/7ghdbftp54/verified-public-file.zip"}
         dataset = {"dataset_id": "7ghdbftp54", "version": 1,
                    "cc_by_4_metadata_verified": True}
         with tempfile.TemporaryDirectory() as d:
@@ -106,7 +120,7 @@ class SourceAcquisitionTests(unittest.TestCase):
         data = b"one"
         entry = {"filename": "data.zip", "file_id": "fa0b1842-a45b-46ad-98de-e949b4c47ce3",
                  "size": len(data), "provider_sha256": "0" * 64,
-                 "eligible_file_type": True}
+                 "eligible_file_type": True, "download_url": "https://data.mendeley.com/public-files/datasets/7ghdbftp54/verified-public-file.zip"}
         dataset = {"dataset_id": "7ghdbftp54", "version": 1,
                    "cc_by_4_metadata_verified": True}
         with tempfile.TemporaryDirectory() as d:
@@ -118,7 +132,7 @@ class SourceAcquisitionTests(unittest.TestCase):
 
     def test_not_licensed_and_not_hashed_stay_blocked(self):
         entry = {"filename": "data.zip", "file_id": "fa0b1842-a45b-46ad-98de-e949b4c47ce3",
-                 "size": 4, "provider_sha256": "", "eligible_file_type": True}
+                 "size": 4, "provider_sha256": "", "eligible_file_type": True, "download_url": "https://data.mendeley.com/public-files/datasets/7ghdbftp54/verified-public-file.zip"}
         dataset = {"dataset_id": "7ghdbftp54", "version": 1,
                    "cc_by_4_metadata_verified": False}
         with tempfile.TemporaryDirectory() as d:
