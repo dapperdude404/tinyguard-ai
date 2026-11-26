@@ -56,6 +56,8 @@ jobs:
           python scripts/acquire_smartplant50_sources.py \
             --registry dataset_sources/50class_source_register.csv \
             --workspace "$RUNNER_TEMP/smartplant50"
+      - name: Verify one public download handshake without reading file bytes
+        run: python -m scripts.probe_smartplant_download_handshake
       - name: Upload only the public source receipts
         if: success()
         uses: actions/upload-artifact@v4
