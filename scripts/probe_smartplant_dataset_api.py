@@ -12,6 +12,9 @@ TARGETS=[
     f"https://api.data.mendeley.com/datasets/{DATASET}?version=1",
     f"https://api.data.mendeley.com/datasets/publics/{DATASET}?version=1",
     f"https://data.mendeley.com/public-api/datasets/{DATASET}",
+    f"https://data.mendeley.com/public-api/datasets/{DATASET}?version=1",
+    "https://data.mendeley.com/public-api/datasets/5nfjzntwd8?version=3",
+    "https://data.mendeley.com/public-api/datasets/5nfjzntwd8?version=2",
     f"https://data.mendeley.com/public-api/datasets/{DATASET}/1",
     f"https://data.mendeley.com/datasets/{DATASET}/1",
 ]
@@ -29,7 +32,17 @@ for url in TARGETS:
                 result["type"]=type(info).__name__
                 if isinstance(info,dict):
                     result["top_level_keys"]=list(info)[:25]
+                    result["dataset_version"]=info.get("version")
+                    result["dataset_id_type"]="uuid" if len(str(info.get("id","")))>=32 else "short"
+                    licence=info.get("data_licence")
+                    result["licence"]=licence if isinstance(licence,(str,dict)) else str(type(licence))
                     result["files_count"]=len(info.get("files",[])) if isinstance(info.get("files"),list) else None
+                    if isinstance(info.get("files"),list) and info["files"] and isinstance(info["files"][0],dict):
+                        file=info["files"][0]
+                        result["first_file_keys"]=list(file.keys())
+                        detail=file.get("content_details") or {}
+                        result["content_details_keys"]=list(detail.keys()) if isinstance(detail,dict) else []
+                        result["has_provider_sha256"]=bool(detail.get("sha256_hash")) if isinstance(detail,dict) else False
                     if isinstance(info.get("data"),dict):
                         result["nested_data_keys"]=list(info["data"])[:15]
             except ValueError:
