@@ -154,36 +154,73 @@ def normalise_file(item: dict) -> dict:
     digest = digest.lower()
     if digest and not HEX64.fullmatch(digest):
         raise ValueError("Invalid provider SHA-256")
+    download_url = detail.get("download_url") or ""
+    if not isinstance(download_url, str):
+        download_url = ""
     return {"filename": name, "file_id": file_id, "size": size,
             "provider_sha256": digest,
+            "download_url": download_url,
             "eligible_file_type": Path(name).suffix.lower() in FILE_TYPES,
             "within_size_limit": size <= MAX_FILE_BYTES}
 
 
 def discover(session, register: Path) -> list[dict]:
+    """Use Mendeley's anonymous public website API, not its OAuth API.
+
+    The public endpoint includes files for its CURRENT published version.
+    Older pinned versions cannot be substituted with latest-version data.
+    """
     datasets = []
     for (dataset_id, version), classes in sorted(source_datasets(register).items()):
-        metadata = get_json(session, f"{API}/datasets/{dataset_id}",
-                            params={"version": version})
+        try:
+            metadata = get_json(session,
+                f"https://data.mendeley.com/public-api/datasets/{dataset_id}")
+        except requests.RequestException as exc:
+            datasets.append({
+                "dataset_id": dataset_id, "version": version,
+                "candidate_class_ids": sorted(classes),
+                "cc_by_4_metadata_verified": False, "files": [],
+                "state": f"UNAVAILABLE: {type(exc).__name__} (no download)",
+            })
+            continue
         if not isinstance(metadata, dict):
-            raise ValueError("Unexpected dataset metadata")
+            raise ValueError("Unexpected public dataset JSON")
         actual_id = metadata.get("short_id") or metadata.get("id")
         actual_version = metadata.get("version")
-        if actual_id != dataset_id or int(actual_version) != version:
-            raise ValueError("Dataset short ID/version mismatch in public API")
-        permitted = find_cc_by_4(metadata)
-        source_files = list_public_files(session, dataset_id, version)
+        if actual_id != dataset_id:
+            raise ValueError("Public dataset ID mismatch; refusing unsafe source")
+        if not isinstance(actual_version, int):
+            raise ValueError("Missing public dataset version")
+        if actual_version != version:
+            datasets.append({
+                "dataset_id": dataset_id, "version": version,
+                "current_public_version": actual_version,
+                "name": metadata.get("name"),
+                "candidate_class_ids": sorted(classes),
+                "cc_by_4_metadata_verified": False, "files": [],
+                "state": "SKIPPED: pinned version differs from public latest metadata",
+            })
+            continue
+        source_files = metadata.get("files")
+        if not isinstance(source_files, list):
+            datasets.append({
+                "dataset_id": dataset_id, "version": version,
+                "candidate_class_ids": sorted(classes),
+                "cc_by_4_metadata_verified": False, "files": [],
+                "state": "SKIPPED: no file listing in anonymous public metadata",
+            })
+            continue
         files = [normalise_file(item) for item in source_files]
         datasets.append({
-            "dataset_id": dataset_id, "version": version, "name": metadata.get("name"),
+            "dataset_id": dataset_id, "version": version,
+            "name": metadata.get("name"),
             "license": metadata.get("data_licence") or metadata.get("data_license"),
-            "cc_by_4_metadata_verified": permitted,
+            "cc_by_4_metadata_verified": find_cc_by_4(metadata),
             "candidate_class_ids": sorted(classes),
             "files": files,
             "state": "DISCOVERED ONLY: requires label, licence, provenance audit",
         })
     return datasets
-
 
 def atomic_json(path: Path, value):
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -221,8 +258,14 @@ def download_verified(session, entry: dict, dataset: dict, folder: Path,
         raise ValueError("Existing quarantine bytes fail provider SHA-256")
 
     folder.mkdir(parents=True, exist_ok=True)
-    download_url = (f"{API}/datasets/{dataset['dataset_id']}/files/"
-                    f"{entry['file_id']}/file_downloaded?version={dataset['version']}")
+    download_url = entry.get("download_url", "")
+    parsed = urlparse(download_url)
+    # Use only the publisher's explicit public-files endpoint.
+    if (parsed.scheme != "https" or parsed.hostname != "data.mendeley.com"
+            or not parsed.path.startswith(
+                f"/public-files/datasets/{dataset['dataset_id']}/")):
+        return {"status": "SKIPPED",
+                "reason": "No approved publisher public-files URL"}
     total = 0
     digest = hashlib.sha256()
     with tempfile.NamedTemporaryFile("wb", dir=folder, prefix=".downloading-",
@@ -277,6 +320,11 @@ def run_acquisition(register: Path, workspace: Path, *, do_download: bool = Fals
                 report["verified_download_count"] += 1
                 if not entry["acquisition"].get("cached"):
                     report["downloaded_bytes"] += entry["size"]
+    # Publisher download URLs may contain short-lived signed tokens. Do not
+    # persist them in receipts; only trust checksum, source, version and outcome.
+    for dataset in datasets:
+        for entry in dataset["files"]:
+            entry.pop("download_url", None)
     atomic_json(workspace / "audit_reports" / "external_source_receipts.json", report)
     return report
 
