@@ -43,6 +43,14 @@ for url in TARGETS:
                         detail=file.get("content_details") or {}
                         result["content_details_keys"]=list(detail.keys()) if isinstance(detail,dict) else []
                         result["has_provider_sha256"]=bool(detail.get("sha256_hash")) if isinstance(detail,dict) else False
+                        from urllib.parse import urlsplit
+                        u=detail.get("download_url","")
+                        if u:
+                            parsed=urlsplit(u)
+                            result["download_url_scheme"]=parsed.scheme
+                            result["download_url_host"]=parsed.hostname
+                            result["download_url_path_prefix"]="/".join(parsed.path.split("/")[:4])
+                        result["first_file_size"]=detail.get("size")
                     if isinstance(info.get("data"),dict):
                         result["nested_data_keys"]=list(info["data"])[:15]
             except ValueError:
