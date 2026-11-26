@@ -1,0 +1,67 @@
+name: SmartPlant50 One-Click Colab Verification
+
+on:
+  push:
+    branches:
+      - feature/smartplant50-one-click-colab
+  pull_request:
+    paths:
+      - 'notebooks/SmartPlant50_One_Click_Dataset_Download.ipynb'
+      - '.github/workflows/smartplant50-one-click-colab.yml'
+      - 'scripts/acquire_smartplant50_sources.py'
+
+jobs:
+  notebook-static:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify notebook JSON, runnable Python and secure destination
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          nb = json.loads(Path("notebooks/SmartPlant50_One_Click_Dataset_Download.ipynb").read_text())
+          assert nb["nbformat"] == 4
+          snippets = ["".join(cell["source"]) for cell in nb["cells"] if cell["cell_type"] == "code"]
+          for i, script in enumerate(snippets):
+              compile(script, f"code-cell-{i}", "exec")
+          text = "\n".join(snippets)
+          for required in ("drive.mount", "source_quarantine",
+                           "scan_smartplant_drive_archives.py",
+                           "acquire_smartplant50_sources.py",
+                           "--download", "--max-total-gib"):
+              assert required in text, required
+          assert "MAX_GIB = 4.0" in text
+          assert "train_expanded_cnn.py" not in text
+          print(f"{len(snippets)} Colab code cells compile; no training command: PASS")
+          PY
+
+  live-provider-metadata:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install 'requests>=2.32,<3'
+      - name: Probe public metadata access without credentials
+        run: python scripts/probe_smartplant_dataset_api.py
+      - name: Read live public dataset metadata only (no downloads)
+        run: |
+          python scripts/acquire_smartplant50_sources.py \
+            --registry dataset_sources/50class_source_register.csv \
+            --workspace "$RUNNER_TEMP/smartplant50"
+      - name: Verify one public download handshake without reading file bytes
+        run: python -m scripts.probe_smartplant_download_handshake
+      - name: Upload only the public source receipts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smartplant50-public-metadata-only
+          path: ${{ runner.temp }}/smartplant50/audit_reports/external_source_receipts.json
+          retention-days: 7
